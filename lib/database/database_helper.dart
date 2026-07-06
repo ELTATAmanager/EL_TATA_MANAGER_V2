@@ -21,8 +21,9 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -103,9 +104,18 @@ CREATE TABLE comparacion(
   descripcion TEXT,
   precioViejo REAL,
   precioNuevo REAL,
-  estado TEXT
+  estado TEXT,
+  marca TEXT
 )
 ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+        'ALTER TABLE comparacion ADD COLUMN marca TEXT',
+      );
+    }
   }
 
   Future<void> cerrar() async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/comparacion.dart';
+import '../services/comparador_service.dart';
 import '../services/csv_service.dart';
 
 class ComparacionPage extends StatefulWidget {
@@ -11,9 +12,16 @@ class ComparacionPage extends StatefulWidget {
 
 class _ComparacionPageState extends State<ComparacionPage> {
   final CsvService csvService = CsvService();
+  final ComparadorService comparadorService = ComparadorService();
+
   List<Comparacion> lista = [];
   bool cargando = true;
   String filtro = "TODOS";
+
+  int aumentos = 0;
+  int bajas = 0;
+  int nuevos = 0;
+  int iguales = 0;
 
   @override
   void initState() {
@@ -22,6 +30,14 @@ class _ComparacionPageState extends State<ComparacionPage> {
   }
 
   Future<void> cargar() async {
+    setState(() {
+      cargando = true;
+    });
+    lista = await comparadorService.obtenerComparacion();
+    aumentos = await comparadorService.cantidadAumentos();
+    bajas = await comparadorService.cantidadBajas();
+    nuevos = await comparadorService.cantidadNuevos();
+    iguales = await comparadorService.cantidadIguales();
     if (!mounted) return;
     setState(() {
       cargando = false;
@@ -34,9 +50,7 @@ class _ComparacionPageState extends State<ComparacionPage> {
     });
     await csvService.analizarArchivo();
     if (!mounted) return;
-    setState(() {
-      cargando = false;
-    });
+    await cargar();
   }
 
   Color colorEstado(String estado) {
@@ -93,11 +107,60 @@ class _ComparacionPageState extends State<ComparacionPage> {
   }
 
   Future<void> actualizarPrecios() async {
+    setState(() {
+      cargando = true;
+    });
+    await comparadorService.actualizarProductos();
+    await comparadorService.limpiarComparaciones();
     if (!mounted) return;
+    setState(() {
+      lista = [];
+      aumentos = 0;
+      bajas = 0;
+      nuevos = 0;
+      iguales = 0;
+      cargando = false;
+    });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Precios actualizados correctamente.")),
     );
-    cargar();
+  }
+
+  Widget _statChip(String label, int count, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: .40)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -113,12 +176,27 @@ class _ComparacionPageState extends State<ComparacionPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: actualizarPrecios,
+        onPressed: lista.isEmpty ? null : actualizarPrecios,
         icon: const Icon(Icons.save),
         label: const Text("ACTUALIZAR"),
       ),
       body: Column(
         children: [
+          if (!cargando && lista.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  _statChip("SUBIO", aumentos, Colors.red),
+                  _statChip("BAJO", bajas, Colors.green),
+                  _statChip("NUEVO", nuevos, Colors.blue),
+                  _statChip("IGUAL", iguales, Colors.grey),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -139,22 +217,28 @@ class _ComparacionPageState extends State<ComparacionPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : listaFiltrada.isEmpty
                     ? const Center(
-                        child: Text("No hay diferencias.", style: TextStyle(fontSize: 20)),
+                        child: Text(
+                          "No hay diferencias.",
+                          style: TextStyle(fontSize: 20),
+                        ),
                       )
                     : ListView.builder(
                         itemCount: listaFiltrada.length,
                         itemBuilder: (context, index) {
                           final item = listaFiltrada[index];
                           return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: colorEstado(item.estado),
-                                child: Icon(iconoEstado(item.estado), color: Colors.white),
+                                child: Icon(iconoEstado(item.estado),
+                                    color: Colors.white),
                               ),
                               title: Text(
                                 item.descripcion,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,34 +248,58 @@ class _ComparacionPageState extends State<ComparacionPage> {
                                     children: [
                                       const SizedBox(
                                         width: 120,
-                                        child: Text("Código", style: TextStyle(fontWeight: FontWeight.bold)),
+                                        child: Text("Código",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold)),
                                       ),
                                       Expanded(child: Text(item.codigo)),
                                     ],
                                   ),
+                                  if (item.marca.isNotEmpty)
+                                    Row(
+                                      children: [
+                                        const SizedBox(
+                                          width: 120,
+                                          child: Text("Marca",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                        ),
+                                        Expanded(child: Text(item.marca)),
+                                      ],
+                                    ),
                                   Row(
                                     children: [
                                       const SizedBox(
                                         width: 120,
-                                        child: Text("Precio viejo", style: TextStyle(fontWeight: FontWeight.bold)),
+                                        child: Text("Precio viejo",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold)),
                                       ),
-                                      Expanded(child: Text("\$${item.precioViejo.toStringAsFixed(2)}")),
+                                      Expanded(
+                                          child: Text(
+                                              "\$${item.precioViejo.toStringAsFixed(2)}")),
                                     ],
                                   ),
                                   Row(
                                     children: [
                                       const SizedBox(
                                         width: 120,
-                                        child: Text("Precio nuevo", style: TextStyle(fontWeight: FontWeight.bold)),
+                                        child: Text("Precio nuevo",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold)),
                                       ),
-                                      Expanded(child: Text("\$${item.precioNuevo.toStringAsFixed(2)}")),
+                                      Expanded(
+                                          child: Text(
+                                              "\$${item.precioNuevo.toStringAsFixed(2)}")),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: colorEstado(item.estado).withValues(alpha: .15),
+                                      color: colorEstado(item.estado)
+                                          .withValues(alpha: .15),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(

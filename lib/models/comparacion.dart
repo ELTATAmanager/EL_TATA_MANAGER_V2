@@ -8,6 +8,7 @@ class Comparacion {
   double precioNuevo;
 
   String estado;
+  String marca;
 
   Comparacion({
     this.id,
@@ -16,6 +17,7 @@ class Comparacion {
     required this.precioViejo,
     required this.precioNuevo,
     required this.estado,
+    this.marca = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +28,7 @@ class Comparacion {
       'precioViejo': precioViejo,
       'precioNuevo': precioNuevo,
       'estado': estado,
+      'marca': marca,
     };
   }
 
@@ -37,6 +40,7 @@ class Comparacion {
       precioViejo: (map['precioViejo'] ?? 0).toDouble(),
       precioNuevo: (map['precioNuevo'] ?? 0).toDouble(),
       estado: map['estado'] ?? '',
+      marca: map['marca'] ?? '',
     );
   }
 
