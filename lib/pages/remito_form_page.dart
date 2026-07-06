@@ -125,7 +125,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                       final p = productosFiltrados[i];
                       return ListTile(
                         title: Text(p.descripcion),
-                        subtitle: Text("${p.codigo}  |  \$${p.precio.toStringAsFixed(2)}"),
+                        subtitle: Text("${p.codigo} | \$${p.precio.toStringAsFixed(2)}"),
                         onTap: () {
                           Navigator.pop(ctx);
                           _pedirCantidad(p);
@@ -321,7 +321,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                               child: ListTile(
                                 title: Text(item.producto.descripcion),
                                 subtitle: Text(
-                                  "x${item.cantidad}  ×  \$${item.precioUnitario.toStringAsFixed(2)}",
+                                  "x${item.cantidad} × \$${item.precioUnitario.toStringAsFixed(2)}",
                                 ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
