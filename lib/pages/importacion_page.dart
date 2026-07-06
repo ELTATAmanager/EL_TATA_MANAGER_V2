@@ -145,23 +145,25 @@ class _ImportacionPageState extends State<ImportacionPage> {
       _mensajeError = '';
     });
 
+    final codigoIdx = _mapeo[_Col.codigo]!;
+
+    String valorCol(List<dynamic> fila, int? idx) =>
+        (idx != null && idx < fila.length) ? fila[idx].toString().trim() : '';
+    double numCol(List<dynamic> fila, int? idx) =>
+        _parsearNumero(valorCol(fila, idx));
+
     for (final fila in _filas) {
-      final codigoIdx = _mapeo[_Col.codigo]!;
       if (codigoIdx >= fila.length) continue;
       final codigo = fila[codigoIdx].toString().trim();
       if (codigo.isEmpty) continue;
 
-      String _v(int? idx) =>
-          (idx != null && idx < fila.length) ? fila[idx].toString().trim() : '';
-      double _n(int? idx) => _parsearNumero(_v(idx));
-
-      final descripcion = _v(_mapeo[_Col.descripcion]);
-      final marca = _v(_mapeo[_Col.marca]);
-      final categoria = _v(_mapeo[_Col.categoria]);
-      final proveedor = _v(_mapeo[_Col.proveedor]);
-      final costo = _n(_mapeo[_Col.costo]);
-      final precio = _n(_mapeo[_Col.precio]);
-      final stock = _n(_mapeo[_Col.stock]).toInt();
+      final descripcion = valorCol(fila, _mapeo[_Col.descripcion]);
+      final marca = valorCol(fila, _mapeo[_Col.marca]);
+      final categoria = valorCol(fila, _mapeo[_Col.categoria]);
+      final proveedor = valorCol(fila, _mapeo[_Col.proveedor]);
+      final costo = numCol(fila, _mapeo[_Col.costo]);
+      final precio = numCol(fila, _mapeo[_Col.precio]);
+      final stock = numCol(fila, _mapeo[_Col.stock]).toInt();
 
       final existente = await _svc.buscarPorCodigo(codigo);
 
