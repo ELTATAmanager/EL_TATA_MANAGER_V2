@@ -59,6 +59,8 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
 
   Future<void> guardar() async {
     if (!formKey.currentState!.validate()) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     setState(() {
       guardando = true;
@@ -78,7 +80,6 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
       if (widget.proveedor == null) {
         await service.insertar(proveedor);
         if (!mounted) return;
-        final messenger = ScaffoldMessenger.of(context);
         messenger.showSnackBar(
           const SnackBar(
             content: Text("Proveedor guardado exitosamente"),
@@ -88,7 +89,6 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
       } else {
         await service.actualizar(proveedor);
         if (!mounted) return;
-        final messenger = ScaffoldMessenger.of(context);
         messenger.showSnackBar(
           const SnackBar(
             content: Text("Proveedor actualizado exitosamente"),
@@ -98,10 +98,9 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
       }
 
       if (!mounted) return;
-      Navigator.pop(context);
+      navigator.pop();
     } catch (e) {
       if (!mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
       messenger.showSnackBar(
         SnackBar(
           content: Text("Error: $e"),

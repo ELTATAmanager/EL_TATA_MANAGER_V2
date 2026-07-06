@@ -238,7 +238,7 @@ class PdfService {
                         ),
                         pw.Text(
                           '\$${(total / (1 - descuento / 100)).toStringAsFixed(2)}',
-                          style: const pw.TextStyle(fontSize: 10),
+                          style: pw.TextStyle(fontSize: 10),
                         ),
                       ],
                     ),
@@ -247,11 +247,11 @@ class PdfService {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text('Descuento ${descuento.toStringAsFixed(0)}%:',
-                            style: const pw.TextStyle(
+                            style: pw.TextStyle(
                                 fontSize: 10, color: PdfColors.green)),
                         pw.Text(
                           '-\$${(total / (1 - descuento / 100) * descuento / 100).toStringAsFixed(2)}',
-                          style: const pw.TextStyle(
+                          style: pw.TextStyle(
                               fontSize: 10, color: PdfColors.green),
                         ),
                       ],
