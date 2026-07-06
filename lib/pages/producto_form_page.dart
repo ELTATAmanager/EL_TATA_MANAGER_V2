@@ -30,6 +30,7 @@ class _ProductoFormPageState
   final proveedorController = TextEditingController();
   final stockController = TextEditingController();
   final costoController = TextEditingController();
+  final margenController = TextEditingController(text: '0');
   final precioController = TextEditingController();
   final observacionesController =
       TextEditingController();
@@ -51,6 +52,9 @@ class _ProductoFormPageState
       stockController.text = p.stock.toString();
       costoController.text = p.costo.toString();
       precioController.text = p.precio.toString();
+      if (p.costo > 0 && p.precio > 0) {
+        margenController.text = ((p.precio / p.costo - 1) * 100).toStringAsFixed(1);
+      }
       observacionesController.text =
           p.observaciones;
 
@@ -73,6 +77,15 @@ class _ProductoFormPageState
     });
   }
 
+  void recalcularPrecio() {
+    final costo =
+        double.tryParse(costoController.text.replaceAll(',', '.')) ?? 0;
+    final margen =
+        double.tryParse(margenController.text.replaceAll(',', '.')) ?? 0;
+    final precio = costo * (1 + margen / 100);
+    precioController.text = precio.toStringAsFixed(2);
+  }
+
   Future<void> guardar() async {
     final producto = Producto(
       id: widget.producto?.id,
@@ -86,10 +99,10 @@ class _ProductoFormPageState
       stock:
           int.tryParse(stockController.text) ?? 0,
       costo:
-          double.tryParse(costoController.text) ??
+          double.tryParse(costoController.text.replaceAll(',', '.')) ??
               0,
       precio:
-          double.tryParse(precioController.text) ??
+          double.tryParse(precioController.text.replaceAll(',', '.')) ??
               0,
       observaciones:
           observacionesController.text.trim(),
@@ -109,13 +122,17 @@ class _ProductoFormPageState
 
   Widget campo(
     String titulo,
-    TextEditingController controller,
-  ) {
+    TextEditingController controller, {
+    TextInputType? keyboardType,
+    ValueChanged<String>? onChanged,
+  }) {
     return Padding(
       padding:
           const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: controller,
+        keyboardType: keyboardType,
+        onChanged: onChanged,
         decoration: InputDecoration(
           labelText: titulo,
           border:
@@ -191,11 +208,24 @@ class _ProductoFormPageState
             campo(
               "Costo",
               costoController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => recalcularPrecio(),
+            ),
+
+            campo(
+              "Margen (%)",
+              margenController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => recalcularPrecio(),
             ),
 
             campo(
               "Precio",
               precioController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
             ),
 
             campo(

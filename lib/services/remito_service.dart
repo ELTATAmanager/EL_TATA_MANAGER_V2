@@ -10,9 +10,11 @@ class RemitoService {
 
   Future<String> generarNumero() async {
     final db = await dbHelper.database;
-    final r = await db.rawQuery('SELECT COUNT(*) total FROM remitos');
-    final n = (Sqflite.firstIntValue(r) ?? 0) + 1;
-    return 'R-${n.toString().padLeft(5, '0')}';
+    final r = await db.rawQuery(
+      "SELECT MAX(CAST(SUBSTR(numero,3) AS INTEGER)) AS maxN FROM remitos WHERE numero LIKE 'R-%'",
+    );
+    final maxN = (r.first['maxN'] as num?)?.toInt() ?? 0;
+    return 'R-${(maxN + 1).toString().padLeft(5, '0')}';
   }
 
   Future<int> insertar(Remito remito, List<RemitoDetalle> items) async {
@@ -28,7 +30,9 @@ class RemitoService {
               : null,
           'fecha': remito.fecha.toIso8601String(),
           'total': remito.total,
+          'descuento': remito.descuento,
           'estado': remito.estado,
+          'estadoPago': remito.estadoPago,
           'observaciones': remito.observaciones,
           'fechaCreacion': DateTime.now().toIso8601String(),
         },
@@ -67,7 +71,18 @@ class RemitoService {
   Future<List<Map<String, dynamic>>> obtenerTodosConCliente() async {
     final db = await dbHelper.database;
     return db.rawQuery('''
-      SELECT r.*, c.nombre AS clienteNombre
+      SELECT
+        r.id,
+        r.numero,
+        r.clienteId,
+        r.fecha,
+        r.total,
+        r.descuento,
+        r.estado,
+        r.estadoPago,
+        r.observaciones,
+        r.fechaCreacion,
+        c.nombre AS clienteNombre
       FROM remitos r
       LEFT JOIN clientes c ON c.id = r.clienteId
       ORDER BY datetime(r.fecha) DESC, datetime(r.fechaCreacion) DESC
@@ -77,7 +92,18 @@ class RemitoService {
   Future<List<Map<String, dynamic>>> obtenerPorCliente(int clienteId) async {
     final db = await dbHelper.database;
     return db.rawQuery('''
-      SELECT r.*, c.nombre AS clienteNombre
+      SELECT
+        r.id,
+        r.numero,
+        r.clienteId,
+        r.fecha,
+        r.total,
+        r.descuento,
+        r.estado,
+        r.estadoPago,
+        r.observaciones,
+        r.fechaCreacion,
+        c.nombre AS clienteNombre
       FROM remitos r
       LEFT JOIN clientes c ON c.id = r.clienteId
       WHERE r.clienteId = ?
@@ -93,6 +119,16 @@ class RemitoService {
       JOIN productos p ON p.id = ri.productoId
       WHERE ri.remitoId = ?
     ''', [remitoId]);
+  }
+
+  Future<void> actualizarEstadoPago(int id, String estadoPago) async {
+    final db = await dbHelper.database;
+    await db.update(
+      'remitos',
+      {'estadoPago': estadoPago},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> anular(int id) async {
@@ -163,5 +199,32 @@ class RemitoService {
       "SELECT SUM(total) total FROM remitos WHERE estado != 'anulado'",
     );
     return (r.first['total'] as num?)?.toDouble() ?? 0;
+  }
+
+  Future<List<Map<String, dynamic>>> topProductos({int limite = 5}) async {
+    final db = await dbHelper.database;
+    return db.rawQuery('''
+      SELECT p.descripcion, SUM(ri.cantidad) AS totalVendido, SUM(ri.subtotal) AS totalMonto
+      FROM remito_items ri
+      JOIN productos p ON p.id = ri.productoId
+      JOIN remitos r ON r.id = ri.remitoId
+      WHERE r.estado != 'anulado'
+      GROUP BY ri.productoId
+      ORDER BY totalVendido DESC
+      LIMIT ?
+    ''', [limite]);
+  }
+
+  Future<List<Map<String, dynamic>>> topClientes({int limite = 5}) async {
+    final db = await dbHelper.database;
+    return db.rawQuery('''
+      SELECT c.nombre, COUNT(r.id) AS cantidadRemitos, SUM(r.total) AS totalCompras
+      FROM remitos r
+      JOIN clientes c ON c.id = r.clienteId
+      WHERE r.estado != 'anulado'
+      GROUP BY r.clienteId
+      ORDER BY totalCompras DESC
+      LIMIT ?
+    ''', [limite]);
   }
 }

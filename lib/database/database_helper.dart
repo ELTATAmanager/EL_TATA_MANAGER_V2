@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -77,7 +77,9 @@ CREATE TABLE remitos(
   clienteId INTEGER,
   fecha TEXT,
   total REAL DEFAULT 0,
+  descuento REAL DEFAULT 0,
   estado TEXT,
+  estadoPago TEXT DEFAULT 'pendiente',
   observaciones TEXT,
   fechaCreacion TEXT,
   FOREIGN KEY(clienteId) REFERENCES clientes(id)
@@ -137,10 +139,22 @@ CREATE TABLE IF NOT EXISTS movimientos_stock(
     if (oldVersion < 3) {
       await _crearTablaMovimientosStock(db);
     }
+
+    if (oldVersion < 4) {
+      await db.execute(
+        'ALTER TABLE remitos ADD COLUMN descuento REAL DEFAULT 0',
+      );
+      await db.execute(
+        "ALTER TABLE remitos ADD COLUMN estadoPago TEXT DEFAULT 'pendiente'",
+      );
+    }
   }
 
   Future<void> cerrar() async {
-    final db = await database;
-    await db.close();
+    final db = _database;
+    if (db != null && db.isOpen) {
+      await db.close();
+    }
+    _database = null;
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/csv_service.dart';
+import 'backup_page.dart';
 import 'clientes_page.dart';
 import 'comparacion_page.dart';
 import 'dashboard_page.dart';
@@ -91,31 +92,31 @@ class _InicioPageState extends State<InicioPage> {
         child: Column(
           children: [
             Card(
-              elevation: 8,
+              elevation: 6,
               child: Padding(
-                padding: const EdgeInsets.all(30),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
                       Icons.store,
                       color: Colors.orange,
-                      size: 90,
+                      size: 64,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
                     const Text(
                       "EL TATA Manager",
                       style: TextStyle(
-                        fontSize: 30,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     const Text(
                       "Gestor de inventario y proveedores",
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 28),
                     SizedBox(
                       width: double.infinity,
                       height: 55,
@@ -149,10 +150,12 @@ class _InicioPageState extends State<InicioPage> {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
+              childAspectRatio: 1.1,
               children: [
                 _ModuleCard(
                   icon: Icons.inventory,
                   title: "Productos",
+                  color: Colors.blue,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -165,6 +168,7 @@ class _InicioPageState extends State<InicioPage> {
                 _ModuleCard(
                   icon: Icons.business,
                   title: "Proveedores",
+                  color: Colors.teal,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -177,6 +181,7 @@ class _InicioPageState extends State<InicioPage> {
                 _ModuleCard(
                   icon: Icons.people,
                   title: "Clientes",
+                  color: Colors.purple,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -189,6 +194,7 @@ class _InicioPageState extends State<InicioPage> {
                 _ModuleCard(
                   icon: Icons.receipt,
                   title: "Remitos",
+                  color: Colors.orange,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -201,6 +207,7 @@ class _InicioPageState extends State<InicioPage> {
                 _ModuleCard(
                   icon: Icons.inventory_2,
                   title: "Stock",
+                  color: Colors.green,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -213,11 +220,25 @@ class _InicioPageState extends State<InicioPage> {
                 _ModuleCard(
                   icon: Icons.dashboard,
                   title: "Dashboard",
+                  color: Colors.indigo,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const DashboardPage(),
+                      ),
+                    );
+                  },
+                ),
+                _ModuleCard(
+                  icon: Icons.backup,
+                  title: "Respaldo",
+                  color: Colors.grey,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BackupPage(),
                       ),
                     );
                   },
@@ -235,36 +256,43 @@ class _ModuleCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
+  final Color color;
 
   const _ModuleCard({
     required this.icon,
     required this.title,
     required this.onTap,
+    this.color = Colors.orange,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 4,
+      elevation: 2,
       child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 48,
-              color: Colors.orange,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: color.withValues(alpha: 0.12),
+                child: Icon(icon, size: 28, color: color),
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

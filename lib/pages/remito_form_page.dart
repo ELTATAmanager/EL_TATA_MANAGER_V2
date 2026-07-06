@@ -50,6 +50,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
   List<_ItemRemito> items = [];
 
   Cliente? clienteSeleccionado;
+  double descuento = 0;
   bool cargando = true;
   bool guardando = false;
 
@@ -78,6 +79,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
   }
 
   double get total => items.fold(0, (sum, i) => sum + i.subtotal);
+  double get totalConDescuento => total * (1 - descuento / 100);
 
   void _agregarItemDirecto(
     Producto producto, {
@@ -269,6 +271,50 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
     }
   }
 
+  Future<void> editarDescuento() async {
+    final descuentoCtrl = TextEditingController(
+      text: descuento.toStringAsFixed(1),
+    );
+
+    final nuevoDescuento = await showDialog<double>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Editar descuento'),
+        content: TextField(
+          controller: descuentoCtrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Descuento (%)',
+            border: OutlineInputBorder(),
+            suffixText: '%',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final valor =
+                  double.tryParse(descuentoCtrl.text.replaceAll(',', '.')) ??
+                      descuento;
+              Navigator.pop(
+                context,
+                valor.clamp(0.0, 100.0).toDouble(),
+              );
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    if (nuevoDescuento != null) {
+      setState(() => descuento = nuevoDescuento);
+    }
+  }
+
   Future<void> _imprimirOCompartirRemito(
     Remito remito,
     List<RemitoDetalle> detalles,
@@ -279,6 +325,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
       'numero': remito.numero,
       'fecha': remito.fecha.toIso8601String(),
       'total': remito.total,
+      'descuento': remito.descuento,
     };
     final itemsPdf = detalles.map((detalle) {
       final producto = items.firstWhere((item) => item.producto.id == detalle.productoId).producto;
@@ -378,8 +425,10 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
         tipo: 'salida',
         clienteId: clienteSeleccionado!.id.toString(),
         estado: 'confirmado',
+        estadoPago: 'pendiente',
         observaciones: observacionesController.text.trim(),
-        total: total,
+        total: totalConDescuento,
+        descuento: descuento,
       );
 
       final detalles = items
@@ -545,41 +594,65 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                       ),
                     ],
                   ),
-                  child: Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('TOTAL',
-                                style: TextStyle(color: Colors.grey)),
-                            Text(
-                              '\$${total.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange,
-                              ),
+                      Row(
+                        children: [
+                          const Text(
+                            'Descuento:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text('${descuento.toStringAsFixed(1)}%'),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: editarDescuento,
+                            icon: const Icon(Icons.edit, size: 18),
+                            label: const Text('Editar'),
+                          ),
+                        ],
                       ),
-                      ElevatedButton.icon(
-                        onPressed: guardando ? null : guardar,
-                        icon: guardando
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2),
-                              )
-                            : const Icon(Icons.save),
-                        label: const Text('GUARDAR'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 14),
-                        ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('TOTAL',
+                                    style: TextStyle(color: Colors.grey)),
+                                Text(
+                                  '\$${totalConDescuento.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orange,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: guardando ? null : guardar,
+                            icon: guardando
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.save),
+                            label: const Text('GUARDAR'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 14),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

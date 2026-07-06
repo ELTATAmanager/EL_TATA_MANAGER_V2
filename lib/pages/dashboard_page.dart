@@ -22,6 +22,8 @@ class _DashboardPageState extends State<DashboardPage> {
   int totalRemitos = 0;
   double totalVentas = 0;
   double valorStock = 0;
+  List<Map<String, dynamic>> productosTop = [];
+  List<Map<String, dynamic>> clientesTop = [];
   List<Producto> sinStock = [];
   bool cargando = true;
 
@@ -38,6 +40,8 @@ class _DashboardPageState extends State<DashboardPage> {
     final clientes = await clienteService.obtenerTodos();
     final remitos = await remitoService.cantidad();
     final ventas = await remitoService.totalVentas();
+    final topProductos = await remitoService.topProductos();
+    final topClientes = await remitoService.topClientes();
 
     double stock = 0;
     List<Producto> bajo = [];
@@ -53,6 +57,8 @@ class _DashboardPageState extends State<DashboardPage> {
       totalRemitos = remitos;
       totalVentas = ventas;
       valorStock = stock;
+      productosTop = topProductos;
+      clientesTop = topClientes;
       sinStock = bajo.take(5).toList();
       cargando = false;
     });
@@ -100,6 +106,35 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _rankingCard({
+    required String titulo,
+    required String subtitulo,
+    required String valor,
+    required IconData icono,
+    required Color color,
+  }) {
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: .15),
+          child: Icon(icono, color: color),
+        ),
+        title: Text(
+          titulo,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(subtitulo),
+        trailing: Text(
+          valor,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
       ),
     );
@@ -186,6 +221,61 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Top 5 productos más vendidos",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (productosTop.isEmpty)
+                    const Card(
+                      child: ListTile(
+                        title: Text('Sin ventas registradas'),
+                      ),
+                    )
+                  else
+                    ...productosTop.map(
+                      (producto) => _rankingCard(
+                        titulo: (producto['descripcion'] ?? 'Sin descripción')
+                            .toString(),
+                        subtitulo:
+                            '${((producto['totalVendido'] as num?)?.toInt() ?? 0)} unidades vendidas',
+                        valor:
+                            '\$${((producto['totalMonto'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}',
+                        icono: Icons.inventory_2,
+                        color: Colors.deepOrange,
+                      ),
+                    ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Top 5 clientes",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (clientesTop.isEmpty)
+                    const Card(
+                      child: ListTile(
+                        title: Text('Sin clientes con compras'),
+                      ),
+                    )
+                  else
+                    ...clientesTop.map(
+                      (cliente) => _rankingCard(
+                        titulo: (cliente['nombre'] ?? 'Sin nombre').toString(),
+                        subtitulo:
+                            '${((cliente['cantidadRemitos'] as num?)?.toInt() ?? 0)} remitos',
+                        valor:
+                            '\$${((cliente['totalCompras'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}',
+                        icono: Icons.people,
+                        color: Colors.indigo,
+                      ),
+                    ),
                   if (sinStock.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     const Text(
