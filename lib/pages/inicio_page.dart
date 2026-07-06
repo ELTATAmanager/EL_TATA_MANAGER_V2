@@ -371,7 +371,7 @@ class _InicioPageState extends State<InicioPage> {
             const SizedBox(width: 24),
             _BottomItem(
               icon: Icons.point_of_sale_rounded,
-              label: 'Ventas',
+              label: 'Remitos',
               selected: selectedBottom == 2,
               onTap: () => _onBottomTap(2),
             ),
