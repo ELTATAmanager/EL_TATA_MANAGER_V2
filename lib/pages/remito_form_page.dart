@@ -1,10 +1,14 @@
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../models/cliente.dart';
 import '../models/producto.dart';
 import '../models/remito.dart';
 import '../models/remito_detalle.dart';
 import '../services/cliente_service.dart';
+import '../services/pdf_service.dart';
 import '../services/producto_service.dart';
 import '../services/remito_service.dart';
 
@@ -33,6 +37,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
   final RemitoService remitoService = RemitoService();
   final ClienteService clienteService = ClienteService();
   final ProductoService productoService = ProductoService();
+  final PdfService pdfService = PdfService();
 
   final TextEditingController observacionesController =
       TextEditingController();
@@ -74,6 +79,33 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
 
   double get total => items.fold(0, (sum, i) => sum + i.subtotal);
 
+  void _agregarItemDirecto(
+    Producto producto, {
+    int cantidad = 1,
+    double? precioUnitario,
+  }) {
+    final yaExiste = items.indexWhere((it) => it.producto.id == producto.id);
+    if (yaExiste >= 0) {
+      setState(() {
+        items[yaExiste].cantidad += cantidad;
+        if (precioUnitario != null) {
+          items[yaExiste].precioUnitario = precioUnitario;
+        }
+      });
+      return;
+    }
+
+    setState(() {
+      items.add(
+        _ItemRemito(
+          producto: producto,
+          cantidad: cantidad,
+          precioUnitario: precioUnitario ?? producto.precio,
+        ),
+      );
+    });
+  }
+
   Future<void> agregarProducto() async {
     buscarProductoController.clear();
     productosFiltrados = productos;
@@ -105,7 +137,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                   controller: buscarProductoController,
                   autofocus: true,
                   decoration: InputDecoration(
-                    hintText: "Buscar producto...",
+                    hintText: 'Buscar producto...',
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -123,13 +155,49 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                     itemCount: productosFiltrados.length,
                     itemBuilder: (_, i) {
                       final p = productosFiltrados[i];
-                      return ListTile(
-                        title: Text(p.descripcion),
-                        subtitle: Text("${p.codigo} | \$${p.precio.toStringAsFixed(2)}"),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _pedirCantidad(p);
-                        },
+                      final sinStock = p.stock <= 0;
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          title: Text(p.descripcion),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${p.codigo} | \$${p.precio.toStringAsFixed(2)} | Stock: ${p.stock}',
+                              ),
+                              if (sinStock)
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 4),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.warning_amber_rounded,
+                                        size: 16,
+                                        color: Colors.red,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Sin stock disponible',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                          trailing: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _agregarItemDirecto(p);
+                            },
+                            child: const Text('Agregar'),
+                          ),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _pedirCantidad(p);
+                          },
+                        ),
                       );
                     },
                   ),
@@ -157,7 +225,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
             TextField(
               controller: cantidadCtrl,
               decoration: const InputDecoration(
-                labelText: "Cantidad",
+                labelText: 'Cantidad',
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
@@ -167,8 +235,8 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
             TextField(
               controller: precioCtrl,
               decoration: const InputDecoration(
-                labelText: "Precio unitario",
-                prefixText: "\$",
+                labelText: 'Precio unitario',
+                prefixText: '\$',
                 border: OutlineInputBorder(),
               ),
               keyboardType:
@@ -179,11 +247,11 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
+            child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Agregar"),
+            child: const Text('Agregar'),
           ),
         ],
       ),
@@ -191,76 +259,160 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
 
     if (ok == true) {
       final cantidad = int.tryParse(cantidadCtrl.text) ?? 1;
-      final precio = double.tryParse(
-              precioCtrl.text.replaceAll(',', '.')) ??
-          producto.precio;
-
-      final yaExiste = items.indexWhere((it) => it.producto.id == producto.id);
-      if (yaExiste >= 0) {
-        setState(() {
-          items[yaExiste].cantidad += cantidad;
-        });
-      } else {
-        setState(() {
-          items.add(_ItemRemito(
-            producto: producto,
-            cantidad: cantidad,
-            precioUnitario: precio,
-          ));
-        });
-      }
+      final precio =
+          double.tryParse(precioCtrl.text.replaceAll(',', '.')) ?? producto.precio;
+      _agregarItemDirecto(
+        producto,
+        cantidad: cantidad,
+        precioUnitario: precio,
+      );
     }
+  }
+
+  Future<void> _imprimirOCompartirRemito(
+    Remito remito,
+    List<RemitoDetalle> detalles,
+    int remitoId,
+  ) async {
+    final remitoMap = {
+      'id': remitoId,
+      'numero': remito.numero,
+      'fecha': remito.fecha.toIso8601String(),
+      'total': remito.total,
+    };
+    final itemsPdf = detalles.map((detalle) {
+      final producto = items.firstWhere((item) => item.producto.id == detalle.productoId).producto;
+      return {
+        'descripcion': producto.descripcion,
+        'cantidad': detalle.cantidad,
+        'precio': detalle.precioUnitario,
+        'subtotal': detalle.subtotal,
+      };
+    }).toList();
+
+    final accion = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Remito guardado'),
+        content: const Text('¿Querés imprimir o compartir el remito?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'cerrar'),
+            child: const Text('Cerrar'),
+          ),
+          TextButton.icon(
+            onPressed: () => Navigator.pop(context, 'imprimir'),
+            icon: const Icon(Icons.print, color: Colors.orange),
+            label: const Text('Imprimir'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, 'compartir'),
+            icon: const Icon(Icons.share),
+            label: const Text('Compartir'),
+          ),
+        ],
+      ),
+    );
+
+    if (accion == null || accion == 'cerrar') {
+      return;
+    }
+
+    final pdf = await pdfService.generateRemitoPdf(
+      remitoMap,
+      itemsPdf,
+      clienteSeleccionado?.nombre ?? 'Sin cliente',
+    );
+    if (pdf.isEmpty) {
+      return;
+    }
+
+    if (accion == 'imprimir') {
+      await Printing.layoutPdf(onLayout: (_) async => pdf);
+      return;
+    }
+
+    final archivo = await pdfService.guardarPdf(
+      pdf,
+      'remito_${remito.numero}.pdf',
+    );
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(archivo.path)]),
+    );
   }
 
   Future<void> guardar() async {
     if (clienteSeleccionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Seleccioná un cliente")),
+        const SnackBar(content: Text('Seleccioná un cliente')),
       );
       return;
     }
     if (items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Agregá al menos un producto")),
+        const SnackBar(content: Text('Agregá al menos un producto')),
       );
       return;
     }
 
+    final hayStockInsuficiente = items.any(
+      (item) => item.cantidad > item.producto.stock,
+    );
+    if (hayStockInsuficiente) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Hay productos con cantidad mayor al stock disponible. El remito se guardará igualmente.',
+          ),
+        ),
+      );
+    }
+
     setState(() => guardando = true);
 
-    final numero = await remitoService.generarNumero();
+    try {
+      final numero = await remitoService.generarNumero();
+      final remito = Remito(
+        numero: numero,
+        fecha: DateTime.now(),
+        tipo: 'salida',
+        clienteId: clienteSeleccionado!.id.toString(),
+        estado: 'confirmado',
+        observaciones: observacionesController.text.trim(),
+        total: total,
+      );
 
-    final remito = Remito(
-      numero: numero,
-      fecha: DateTime.now(),
-      tipo: 'salida',
-      clienteId: clienteSeleccionado!.id.toString(),
-      estado: 'confirmado',
-      observaciones: observacionesController.text.trim(),
-      total: total,
-    );
+      final detalles = items
+          .map((i) => RemitoDetalle(
+                remitoId: 0,
+                productoId: i.producto.id!,
+                cantidad: i.cantidad,
+                precioUnitario: i.precioUnitario,
+                subtotal: i.subtotal,
+              ))
+          .toList();
 
-    final detalles = items
-        .map((i) => RemitoDetalle(
-              remitoId: 0,
-              productoId: i.producto.id!,
-              cantidad: i.cantidad,
-              precioUnitario: i.precioUnitario,
-              subtotal: i.subtotal,
-            ))
-        .toList();
+      final remitoId = await remitoService.insertar(remito, detalles);
 
-    await remitoService.insertar(remito, detalles);
-
-    if (!mounted) return;
-    Navigator.pop(context);
+      if (!mounted) return;
+      setState(() => guardando = false);
+      await _imprimirOCompartirRemito(remito, detalles, remitoId);
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => guardando = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo guardar el remito: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Nuevo Remito"),
+        title: const Text('Nuevo Remito'),
       ),
       body: cargando
           ? const Center(child: CircularProgressIndicator())
@@ -275,7 +427,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                         DropdownButtonFormField<Cliente>(
                           value: clienteSeleccionado,
                           decoration: InputDecoration(
-                            labelText: "Cliente",
+                            labelText: 'Cliente',
                             prefixIcon: const Icon(Icons.person),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -289,11 +441,11 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                               .toList(),
                           onChanged: (c) =>
                               setState(() => clienteSeleccionado = c),
-                          hint: const Text("Seleccionar cliente"),
+                          hint: const Text('Seleccionar cliente'),
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          "Productos",
+                          'Productos',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 16),
                         ),
@@ -308,7 +460,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                               border: Border.all(color: Colors.grey[300]!),
                             ),
                             child: const Text(
-                              "Sin productos aún",
+                              'Sin productos aún',
                               textAlign: TextAlign.center,
                               style: TextStyle(color: Colors.grey),
                             ),
@@ -317,17 +469,32 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                           ...items.asMap().entries.map((entry) {
                             final idx = entry.key;
                             final item = entry.value;
+                            final stockInsuficiente =
+                                item.cantidad > item.producto.stock;
                             return Card(
                               child: ListTile(
                                 title: Text(item.producto.descripcion),
-                                subtitle: Text(
-                                  "x${item.cantidad} × \$${item.precioUnitario.toStringAsFixed(2)}",
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'x${item.cantidad} × \$${item.precioUnitario.toStringAsFixed(2)}',
+                                    ),
+                                    Text(
+                                      'Stock disponible: ${item.producto.stock}',
+                                      style: TextStyle(
+                                        color: stockInsuficiente
+                                            ? Colors.red
+                                            : Colors.grey[700],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      "\$${item.subtotal.toStringAsFixed(2)}",
+                                      '\$${item.subtotal.toStringAsFixed(2)}',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -350,14 +517,14 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                           child: OutlinedButton.icon(
                             onPressed: agregarProducto,
                             icon: const Icon(Icons.add),
-                            label: const Text("Agregar producto"),
+                            label: const Text('Agregar producto'),
                           ),
                         ),
                         const SizedBox(height: 16),
                         TextField(
                           controller: observacionesController,
                           decoration: const InputDecoration(
-                            labelText: "Observaciones",
+                            labelText: 'Observaciones',
                             border: OutlineInputBorder(),
                           ),
                           maxLines: 2,
@@ -385,10 +552,10 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text("TOTAL",
+                            const Text('TOTAL',
                                 style: TextStyle(color: Colors.grey)),
                             Text(
-                              "\$${total.toStringAsFixed(2)}",
+                              '\$${total.toStringAsFixed(2)}',
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -408,7 +575,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                                     strokeWidth: 2),
                               )
                             : const Icon(Icons.save),
-                        label: const Text("GUARDAR"),
+                        label: const Text('GUARDAR'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 14),

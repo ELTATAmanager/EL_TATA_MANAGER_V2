@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../database/database_helper.dart';
+import '../models/movimiento_stock.dart';
 import '../models/remito.dart';
 import '../models/remito_detalle.dart';
 
@@ -17,32 +18,50 @@ class RemitoService {
   Future<int> insertar(Remito remito, List<RemitoDetalle> items) async {
     final db = await dbHelper.database;
 
-    final remitoId = await db.insert(
-      'remitos',
-      {
-        'numero': remito.numero,
-        'clienteId': remito.clienteId != null
-            ? int.tryParse(remito.clienteId!)
-            : null,
-        'fecha': remito.fecha.toIso8601String(),
-        'total': remito.total,
-        'estado': remito.estado,
-        'observaciones': remito.observaciones,
-        'fechaCreacion': DateTime.now().toIso8601String(),
-      },
-    );
+    return db.transaction((txn) async {
+      final remitoId = await txn.insert(
+        'remitos',
+        {
+          'numero': remito.numero,
+          'clienteId': remito.clienteId != null
+              ? int.tryParse(remito.clienteId!)
+              : null,
+          'fecha': remito.fecha.toIso8601String(),
+          'total': remito.total,
+          'estado': remito.estado,
+          'observaciones': remito.observaciones,
+          'fechaCreacion': DateTime.now().toIso8601String(),
+        },
+      );
 
-    for (final item in items) {
-      await db.insert('remito_items', {
-        'remitoId': remitoId,
-        'productoId': item.productoId,
-        'cantidad': item.cantidad,
-        'precio': item.precioUnitario,
-        'subtotal': item.subtotal,
-      });
-    }
+      for (final item in items) {
+        await txn.insert('remito_items', {
+          'remitoId': remitoId,
+          'productoId': item.productoId,
+          'cantidad': item.cantidad,
+          'precio': item.precioUnitario,
+          'subtotal': item.subtotal,
+        });
 
-    return remitoId;
+        await txn.rawUpdate(
+          'UPDATE productos SET stock = stock - ? WHERE id = ?',
+          [item.cantidad, item.productoId],
+        );
+
+        final movimiento = MovimientoStock(
+          productoId: item.productoId,
+          tipo: 'salida',
+          cantidad: item.cantidad,
+          fecha: DateTime.now(),
+          remitoId: remitoId.toString(),
+          motivo: 'Salida por remito ${remito.numero}',
+        );
+
+        await txn.insert('movimientos_stock', movimiento.toMap()..remove('id'));
+      }
+
+      return remitoId;
+    });
   }
 
   Future<List<Map<String, dynamic>>> obtenerTodosConCliente() async {
@@ -51,8 +70,19 @@ class RemitoService {
       SELECT r.*, c.nombre AS clienteNombre
       FROM remitos r
       LEFT JOIN clientes c ON c.id = r.clienteId
-      ORDER BY r.fechaCreacion DESC
+      ORDER BY datetime(r.fecha) DESC, datetime(r.fechaCreacion) DESC
     ''');
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerPorCliente(int clienteId) async {
+    final db = await dbHelper.database;
+    return db.rawQuery('''
+      SELECT r.*, c.nombre AS clienteNombre
+      FROM remitos r
+      LEFT JOIN clientes c ON c.id = r.clienteId
+      WHERE r.clienteId = ?
+      ORDER BY datetime(r.fecha) DESC, datetime(r.fechaCreacion) DESC
+    ''', [clienteId]);
   }
 
   Future<List<Map<String, dynamic>>> obtenerItems(int remitoId) async {
@@ -67,12 +97,58 @@ class RemitoService {
 
   Future<void> anular(int id) async {
     final db = await dbHelper.database;
-    await db.update(
-      'remitos',
-      {'estado': 'anulado'},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+
+    await db.transaction((txn) async {
+      final remitos = await txn.query(
+        'remitos',
+        where: 'id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+
+      if (remitos.isEmpty) {
+        return;
+      }
+
+      final remito = remitos.first;
+      if (remito['estado'] == 'anulado') {
+        return;
+      }
+
+      final items = await txn.query(
+        'remito_items',
+        where: 'remitoId = ?',
+        whereArgs: [id],
+      );
+
+      for (final item in items) {
+        final productoId = item['productoId'] as int;
+        final cantidad = item['cantidad'] as int? ?? 0;
+
+        await txn.rawUpdate(
+          'UPDATE productos SET stock = stock + ? WHERE id = ?',
+          [cantidad, productoId],
+        );
+
+        final movimiento = MovimientoStock(
+          productoId: productoId,
+          tipo: 'reversion',
+          cantidad: cantidad,
+          fecha: DateTime.now(),
+          remitoId: id.toString(),
+          motivo: 'Reversión de remito ${remito['numero']}',
+        );
+
+        await txn.insert('movimientos_stock', movimiento.toMap()..remove('id'));
+      }
+
+      await txn.update(
+        'remitos',
+        {'estado': 'anulado'},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
   }
 
   Future<int> cantidad() async {

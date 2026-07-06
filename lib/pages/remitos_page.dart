@@ -1,5 +1,9 @@
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../services/pdf_service.dart';
 import '../services/remito_service.dart';
 import 'remito_form_page.dart';
 
@@ -12,6 +16,7 @@ class RemitosPage extends StatefulWidget {
 
 class _RemitosPageState extends State<RemitosPage> {
   final RemitoService service = RemitoService();
+  final PdfService pdfService = PdfService();
 
   List<Map<String, dynamic>> remitos = [];
   bool cargando = true;
@@ -27,6 +32,11 @@ class _RemitosPageState extends State<RemitosPage> {
     remitos = await service.obtenerTodosConCliente();
     if (!mounted) return;
     setState(() => cargando = false);
+  }
+
+  String formatearFecha(String? texto) {
+    final fecha = DateTime.tryParse(texto ?? '') ?? DateTime.now();
+    return '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
   }
 
   Future<void> verItems(Map<String, dynamic> remito) async {
@@ -59,7 +69,7 @@ class _RemitosPageState extends State<RemitosPage> {
                   const Icon(Icons.receipt_long, color: Colors.orange),
                   const SizedBox(width: 8),
                   Text(
-                    "Remito ${remito['numero']}",
+                    'Remito ${remito['numero']}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -71,7 +81,7 @@ class _RemitosPageState extends State<RemitosPage> {
             const Divider(),
             Expanded(
               child: items.isEmpty
-                  ? const Center(child: Text("Sin ítems"))
+                  ? const Center(child: Text('Sin ítems'))
                   : ListView.builder(
                       controller: ctrl,
                       itemCount: items.length,
@@ -80,15 +90,15 @@ class _RemitosPageState extends State<RemitosPage> {
                         return ListTile(
                           title: Text(item['descripcion'] ?? ''),
                           subtitle: Text(
-                            "Código: ${item['codigo']}  |  Marca: ${item['marca'] ?? '-'}",
+                            'Código: ${item['codigo']}  |  Marca: ${item['marca'] ?? '-'}',
                           ),
                           trailing: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text("x${item['cantidad']}"),
+                              Text('x${item['cantidad']}'),
                               Text(
-                                "\$${(item['subtotal'] as num).toStringAsFixed(2)}",
+                                '\$${(item['subtotal'] as num).toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -105,14 +115,14 @@ class _RemitosPageState extends State<RemitosPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    "TOTAL",
+                    'TOTAL',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
                   Text(
-                    "\$${(remito['total'] as num).toStringAsFixed(2)}",
+                    '\$${(remito['total'] as num).toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -128,21 +138,52 @@ class _RemitosPageState extends State<RemitosPage> {
     );
   }
 
+  Future<List<dynamic>> _obtenerPdfItems(Map<String, dynamic> remito) {
+    return service.obtenerItems(remito['id']);
+  }
+
+  Future<void> imprimirRemito(Map<String, dynamic> remito) async {
+    final items = await _obtenerPdfItems(remito);
+    final pdf = await pdfService.generateRemitoPdf(
+      remito,
+      items,
+      remito['clienteNombre']?.toString() ?? 'Sin cliente',
+    );
+    if (pdf.isEmpty) return;
+    await Printing.layoutPdf(onLayout: (_) async => pdf);
+  }
+
+  Future<void> compartirRemito(Map<String, dynamic> remito) async {
+    final items = await _obtenerPdfItems(remito);
+    final pdf = await pdfService.generateRemitoPdf(
+      remito,
+      items,
+      remito['clienteNombre']?.toString() ?? 'Sin cliente',
+    );
+    if (pdf.isEmpty) return;
+    final archivo = await pdfService.guardarPdf(
+      pdf,
+      'remito_${remito['numero']}.pdf',
+    );
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(archivo.path)]),
+    );
+  }
+
   Future<void> confirmarAnular(Map<String, dynamic> remito) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Anular remito"),
-        content: Text("¿Anular el remito ${remito['numero']}?"),
+        title: const Text('Anular remito'),
+        content: Text('¿Anular el remito ${remito['numero']}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
+            child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child:
-                const Text("Anular", style: TextStyle(color: Colors.orange)),
+            child: const Text('Anular', style: TextStyle(color: Colors.orange)),
           ),
         ],
       ),
@@ -164,11 +205,29 @@ class _RemitosPageState extends State<RemitosPage> {
     }
   }
 
+  Widget estadoChip(String estado) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorEstado(estado).withValues(alpha: .15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        estado.toUpperCase(),
+        style: TextStyle(
+          color: colorEstado(estado),
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Remitos"),
+        title: const Text('Remitos'),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
@@ -185,76 +244,113 @@ class _RemitosPageState extends State<RemitosPage> {
           : remitos.isEmpty
               ? const Center(
                   child: Text(
-                    "No hay remitos.",
+                    'No hay remitos.',
                     style: TextStyle(fontSize: 18),
                   ),
                 )
               : ListView.builder(
                   itemCount: remitos.length,
                   itemBuilder: (context, i) {
-                    final r = remitos[i];
-                    final estado = r['estado'] ?? 'pendiente';
-                    final fecha =
-                        DateTime.tryParse(r['fecha'] ?? '') ?? DateTime.now();
+                    final remito = remitos[i];
+                    final estado = remito['estado'] ?? 'pendiente';
                     return Card(
                       margin: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 4),
-                      child: ListTile(
-                        onTap: () => verItems(r),
-                        leading: CircleAvatar(
-                          backgroundColor:
-                              colorEstado(estado).withValues(alpha: .15),
-                          child: Icon(
-                            Icons.receipt,
-                            color: colorEstado(estado),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => verItems(remito),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor:
+                                        colorEstado(estado).withValues(alpha: .15),
+                                    child: Icon(
+                                      Icons.receipt,
+                                      color: colorEstado(estado),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          remito['numero'] ?? '',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(remito['clienteNombre'] ?? 'Sin cliente'),
+                                        Text(
+                                          formatearFecha(remito['fecha']?.toString()),
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '\$${((remito['total'] as num?)?.toDouble() ?? 0).toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      estadoChip(estado),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 20),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Imprimir PDF',
+                                    onPressed: () => imprimirRemito(remito),
+                                    icon: const Icon(
+                                      Icons.picture_as_pdf,
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Compartir PDF',
+                                    onPressed: () => compartirRemito(remito),
+                                    icon: const Icon(
+                                      Icons.share,
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Anular remito',
+                                    onPressed: estado == 'anulado'
+                                        ? null
+                                        : () => confirmarAnular(remito),
+                                    icon: Icon(
+                                      Icons.cancel,
+                                      color: estado == 'anulado'
+                                          ? Colors.grey
+                                          : Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                        title: Text(
-                          r['numero'] ?? '',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(r['clienteNombre'] ?? 'Sin cliente'),
-                            Text(
-                              "${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}",
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              "\$${(r['total'] as num).toStringAsFixed(2)}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color:
-                                    colorEstado(estado).withValues(alpha: .15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                estado.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: colorEstado(estado),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        isThreeLine: true,
                       ),
                     );
                   },

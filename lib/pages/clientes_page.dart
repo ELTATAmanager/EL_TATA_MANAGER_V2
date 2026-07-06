@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/cliente.dart';
 import '../services/cliente_service.dart';
 import 'cliente_form_page.dart';
+import 'cliente_historial_page.dart';
 
 class ClientesPage extends StatefulWidget {
   const ClientesPage({super.key});
@@ -67,6 +68,16 @@ class _ClientesPageState extends State<ClientesPage> {
     }
   }
 
+  Future<void> abrirHistorial(Cliente cliente) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ClienteHistorialPage(cliente: cliente),
+      ),
+    );
+    cargar();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,6 +129,7 @@ class _ClientesPageState extends State<ClientesPage> {
                             margin: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 4),
                             child: ListTile(
+                              onTap: () => abrirHistorial(c),
                               leading: CircleAvatar(
                                 backgroundColor: Colors.orange,
                                 child: Text(
@@ -161,6 +173,11 @@ class _ClientesPageState extends State<ClientesPage> {
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.history,
+                                        color: Colors.orange),
+                                    onPressed: () => abrirHistorial(c),
+                                  ),
                                   IconButton(
                                     icon: const Icon(Icons.edit,
                                         color: Colors.orange),

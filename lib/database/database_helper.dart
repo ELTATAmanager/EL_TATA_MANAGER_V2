@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -108,6 +108,23 @@ CREATE TABLE comparacion(
   marca TEXT
 )
 ''');
+
+    await _crearTablaMovimientosStock(db);
+  }
+
+  Future<void> _crearTablaMovimientosStock(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS movimientos_stock(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  productoId INTEGER NOT NULL,
+  tipo TEXT NOT NULL,
+  cantidad INTEGER NOT NULL,
+  fecha TEXT NOT NULL,
+  remitoId TEXT,
+  motivo TEXT,
+  FOREIGN KEY(productoId) REFERENCES productos(id)
+)
+''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -115,6 +132,10 @@ CREATE TABLE comparacion(
       await db.execute(
         "ALTER TABLE comparacion ADD COLUMN marca TEXT DEFAULT ''",
       );
+    }
+
+    if (oldVersion < 3) {
+      await _crearTablaMovimientosStock(db);
     }
   }
 

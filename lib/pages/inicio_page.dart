@@ -7,6 +7,7 @@ import 'dashboard_page.dart';
 import 'productos_page.dart';
 import 'proveedores_page.dart';
 import 'remitos_page.dart';
+import 'stock_page.dart';
 
 class InicioPage extends StatefulWidget {
   const InicioPage({super.key});
@@ -193,6 +194,18 @@ class _InicioPageState extends State<InicioPage> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => const RemitosPage(),
+                      ),
+                    );
+                  },
+                ),
+                _ModuleCard(
+                  icon: Icons.inventory_2,
+                  title: "Stock",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const StockPage(),
                       ),
                     );
                   },

@@ -107,6 +107,30 @@ class _ComparacionPageState extends State<ComparacionPage> {
   }
 
   Future<void> actualizarPrecios() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Actualizar base de precios'),
+        content: Text(
+          '¿Actualizar ${lista.length} productos? Esta acción actualizará los precios en la base de datos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) {
+      return;
+    }
+
     setState(() {
       cargando = true;
     });
