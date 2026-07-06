@@ -57,6 +57,46 @@ CREATE TABLE proveedores(
 ''');
 
     await db.execute('''
+CREATE TABLE clientes(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL,
+  telefono TEXT,
+  email TEXT,
+  direccion TEXT,
+  observaciones TEXT,
+  fechaCreacion TEXT,
+  activo INTEGER DEFAULT 1
+)
+''');
+
+    await db.execute('''
+CREATE TABLE remitos(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  numero TEXT NOT NULL,
+  clienteId INTEGER,
+  fecha TEXT,
+  total REAL DEFAULT 0,
+  estado TEXT,
+  observaciones TEXT,
+  fechaCreacion TEXT,
+  FOREIGN KEY(clienteId) REFERENCES clientes(id)
+)
+''');
+
+    await db.execute('''
+CREATE TABLE remito_items(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  remitoId INTEGER,
+  productoId INTEGER,
+  cantidad INTEGER,
+  precio REAL,
+  subtotal REAL,
+  FOREIGN KEY(remitoId) REFERENCES remitos(id),
+  FOREIGN KEY(productoId) REFERENCES productos(id)
+)
+''');
+
+    await db.execute('''
 CREATE TABLE comparacion(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   codigo TEXT,
