@@ -139,7 +139,8 @@ CREATE TABLE IF NOT EXISTS usuarios(
       await db.insert('usuarios', {
         'nombre': 'Administrador',
         'usuario': 'admin',
-        'password': 'admin',
+        // SHA-256 hash of 'admin' — change this password on first login
+        'password': '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918',
         'rol': 'admin',
         'activo': 1,
       });

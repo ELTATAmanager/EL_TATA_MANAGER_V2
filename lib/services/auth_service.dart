@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 import '../database/database_helper.dart';
 import '../models/usuario.dart';
 
@@ -9,13 +13,20 @@ class AuthService {
 
   bool get isLoggedIn => currentUser != null;
 
+  /// Returns a SHA-256 hex digest of [password].
+  static String _hash(String password) {
+    final bytes = utf8.encode(password);
+    return sha256.convert(bytes).toString();
+  }
+
   /// Attempts login. Returns the user on success, null on failure.
   Future<Usuario?> login(String usuario, String password) async {
     final db = await DatabaseHelper.instance.database;
+    final hashed = _hash(password);
     final result = await db.query(
       'usuarios',
       where: 'usuario = ? AND password = ? AND activo = 1',
-      whereArgs: [usuario.trim(), password],
+      whereArgs: [usuario.trim(), hashed],
       limit: 1,
     );
     if (result.isEmpty) return null;
