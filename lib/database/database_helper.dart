@@ -45,6 +45,18 @@ CREATE TABLE productos(
 ''');
 
     await db.execute('''
+CREATE TABLE proveedores(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL,
+  telefono TEXT,
+  email TEXT,
+  observaciones TEXT,
+  fechaCreacion TEXT,
+  activo INTEGER DEFAULT 1
+)
+''');
+
+    await db.execute('''
 CREATE TABLE comparacion(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   codigo TEXT,
