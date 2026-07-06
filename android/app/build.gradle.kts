@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.el_tata_manager_v2"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
