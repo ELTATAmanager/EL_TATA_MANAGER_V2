@@ -518,10 +518,10 @@ class _DesktopSidebar extends StatelessWidget {
       (Icons.home_rounded, 'Inicio'),
       (Icons.inventory_2_rounded, 'Productos'),
       (Icons.local_shipping_rounded, 'Proveedores'),
-      (Icons.shopping_cart_rounded, 'Compras'),
-      (Icons.point_of_sale_rounded, 'Ventas'),
+      (Icons.description_rounded, 'Remitos'),
       (Icons.warehouse_rounded, 'Stock'),
-      (Icons.bar_chart_rounded, 'Reportes'),
+      (Icons.query_stats_rounded, 'Dashboard'),
+      (Icons.cloud_upload_rounded, 'Respaldo'),
       (Icons.settings_rounded, 'Configuración'),
       (Icons.groups_rounded, 'Clientes'),
     ];
@@ -602,7 +602,7 @@ class _DesktopSidebar extends StatelessWidget {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Mati Arcuri\nAdministrador',
+                    'Usuario\nAdministrador',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ),
