@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../models/lista_precio.dart';
 import '../models/producto.dart';
 import '../services/auth_service.dart';
+import '../services/lista_precio_service.dart';
 import '../services/producto_service.dart';
 import '../theme/app_visuals.dart';
 import 'producto_form_page.dart';
@@ -53,6 +55,7 @@ class _ProductosPageState extends State<ProductosPage> {
   Future<void> cargarProductos() async {
     setState(() => cargando = true);
     productos = await service.obtenerTodos();
+    listasActivas = await listaPrecioService.obtenerActivas();
 
     // Build filter options
     _marcas = productos.map((p) => p.marca).where((m) => m.isNotEmpty).toSet().toList()
@@ -356,6 +359,7 @@ class _ProductosPageState extends State<ProductosPage> {
                               producto: p,
                               stockColor: stockColor,
                               colorScheme: colorScheme,
+                              listasActivas: listasActivas,
                               onEdit: () => _editarProducto(p),
                               onDelete: () => eliminar(p),
                             );
@@ -547,6 +551,7 @@ class _ProductoCard extends StatelessWidget {
   final Producto producto;
   final Color stockColor;
   final ColorScheme colorScheme;
+  final List<ListaPrecio> listasActivas;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -554,6 +559,7 @@ class _ProductoCard extends StatelessWidget {
     required this.producto,
     required this.stockColor,
     required this.colorScheme,
+    required this.listasActivas,
     required this.onEdit,
     required this.onDelete,
   });
@@ -624,6 +630,12 @@ class _ProductoCard extends StatelessWidget {
                   _PriceBadge(label: 'L2', value: p.precio2, cs: colorScheme),
                 if (p.precio3 > 0)
                   _PriceBadge(label: 'L3', value: p.precio3, cs: colorScheme),
+                for (final lista in listasActivas)
+                  _PriceBadge(
+                    label: lista.nombre,
+                    value: lista.calcularPrecio(p.costo),
+                    cs: colorScheme,
+                  ),
               ],
             ),
             const SizedBox(height: 8),

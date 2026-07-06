@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../database/database_helper.dart';
 import '../models/producto.dart';
+import 'auth_service.dart';
 
 class ProductoService {
   final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
@@ -74,6 +75,29 @@ class ProductoService {
 
   Future<int> actualizar(Producto producto) async {
     final db = await _databaseHelper.database;
+
+    if (producto.id != null) {
+      final anterior = await db.query(
+        'productos',
+        columns: ['costo'],
+        where: 'id = ?',
+        whereArgs: [producto.id],
+        limit: 1,
+      );
+      final costoAnterior =
+          (anterior.isNotEmpty ? anterior.first['costo'] as num? : null)
+              ?.toDouble();
+      if (costoAnterior != null && costoAnterior != producto.costo) {
+        await db.insert('historial_precios', {
+          'productoId': producto.id,
+          'fecha': DateTime.now().toIso8601String(),
+          'usuario': AuthService.instance.currentUser?.usuario ?? 'sistema',
+          'costoAnterior': costoAnterior,
+          'costoNuevo': producto.costo,
+          'motivo': 'Edición de producto',
+        });
+      }
+    }
 
     return db.update(
       'productos',

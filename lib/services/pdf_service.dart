@@ -362,4 +362,196 @@ class PdfService {
     final archivo = File(p.join(carpeta.path, nombreArchivo));
     return archivo.writeAsBytes(bytes, flush: true);
   }
+
+  /// Generates a generic tabular report PDF (used by Reportes page).
+  Future<Uint8List> generateListPdf({
+    required String titulo,
+    required List<String> headers,
+    required List<List<String>> filas,
+  }) async {
+    final branding = BrandingService.instance;
+    final pdf = pw.Document();
+
+    pw.ImageProvider? logoImage;
+    if (branding.logoPath.isNotEmpty) {
+      try {
+        final bytes = await File(branding.logoPath).readAsBytes();
+        logoImage = pw.MemoryImage(bytes);
+      } catch (_) {}
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(28),
+        build: (context) => [
+          pw.Container(
+            padding: const pw.EdgeInsets.all(16),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.orange,
+              borderRadius: pw.BorderRadius.circular(8),
+            ),
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Row(
+                  children: [
+                    if (logoImage != null) ...[
+                      pw.ClipRRect(
+                        horizontalRadius: 4,
+                        verticalRadius: 4,
+                        child: pw.Image(logoImage, width: 40, height: 40),
+                      ),
+                      pw.SizedBox(width: 12),
+                    ],
+                    pw.Text(
+                      branding.nombre,
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                pw.Text(
+                  titulo,
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 16),
+          pw.TableHelper.fromTextArray(
+            border: null,
+            headerDecoration: pw.BoxDecoration(
+              color: PdfColors.orange,
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white,
+              fontSize: 9,
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            cellAlignment: pw.Alignment.centerLeft,
+            cellPadding:
+                const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+            headers: headers,
+            data: filas,
+          ),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  Future<File> guardarPdfReporte(Uint8List bytes, String nombreArchivo) async {
+    final directorio = await getApplicationDocumentsDirectory();
+    final carpeta = Directory(p.join(directorio.path, 'reportes'));
+    if (!await carpeta.exists()) {
+      await carpeta.create(recursive: true);
+    }
+
+    final archivo = File(p.join(carpeta.path, nombreArchivo));
+    return archivo.writeAsBytes(bytes, flush: true);
+  }
+
+  /// Generates a sheet of product labels (código, descripción, precio and a
+  /// QR code with the product código) for printing.
+  Future<Uint8List> generateEtiquetasPdf({
+    required List<Map<String, dynamic>> productos,
+    String tamano = 'medium',
+  }) async {
+    if (productos.isEmpty) return Uint8List(0);
+
+    final pdf = pw.Document();
+
+    final dimensiones = {
+      'small': const PdfPoint(4 * PdfPageFormat.cm, 2 * PdfPageFormat.cm),
+      'medium': const PdfPoint(5 * PdfPageFormat.cm, 3 * PdfPageFormat.cm),
+      'large': const PdfPoint(7 * PdfPageFormat.cm, 4 * PdfPageFormat.cm),
+    };
+    final tamanoLabel = dimensiones[tamano] ?? dimensiones['medium']!;
+    final columnas = tamano == 'large' ? 2 : (tamano == 'small' ? 4 : 3);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(16),
+        build: (context) => [
+          pw.GridView(
+            crossAxisCount: columnas,
+            childAspectRatio: tamanoLabel.x / tamanoLabel.y,
+            children: productos.map((item) {
+              final codigo = item['codigo']?.toString() ?? '';
+              final descripcion = item['descripcion']?.toString() ?? '';
+              final precio = (item['precio'] as num?)?.toDouble() ?? 0;
+
+              return pw.Container(
+                margin: const pw.EdgeInsets.all(4),
+                padding: const pw.EdgeInsets.all(6),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey400),
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.BarcodeWidget(
+                      barcode: pw.Barcode.qrCode(),
+                      data: codigo,
+                      width: 40,
+                      height: 40,
+                    ),
+                    pw.SizedBox(width: 6),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        mainAxisAlignment: pw.MainAxisAlignment.center,
+                        children: [
+                          pw.Text(
+                            descripcion,
+                            style: pw.TextStyle(
+                              fontSize: 8,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: pw.TextOverflow.clip,
+                          ),
+                          pw.Text(
+                            codigo,
+                            style: const pw.TextStyle(
+                              fontSize: 7,
+                              color: PdfColors.grey700,
+                            ),
+                          ),
+                          pw.Text(
+                            '\$${precio.toStringAsFixed(2)}',
+                            style: pw.TextStyle(
+                              fontSize: 11,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.orange900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
 }

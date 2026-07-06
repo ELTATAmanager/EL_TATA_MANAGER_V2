@@ -4,14 +4,20 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../services/branding_service.dart';
+import 'auditoria_page.dart';
 import 'backup_page.dart';
 import 'clientes_page.dart';
+import 'comparacion_page.dart';
+import 'compras_page.dart';
 import 'configuracion_page.dart';
 import 'dashboard_page.dart';
+import 'etiquetas_page.dart';
+import 'listas_precio_page.dart';
 import 'login_page.dart';
 import 'productos_page.dart';
 import 'proveedores_page.dart';
 import 'remitos_page.dart';
+import 'reportes_page.dart';
 import 'stock_page.dart';
 
 class MainShell extends StatefulWidget {
@@ -27,10 +33,16 @@ class _MainShellState extends State<MainShell> {
   static const _titles = [
     'Dashboard',
     'Productos',
-    'Proveedores',
-    'Remitos',
+    'Comparador de listas',
     'Stock',
+    'Compras',
+    'Remitos',
     'Clientes',
+    'Proveedores',
+    'Listas de Precios',
+    'Reportes',
+    'Etiquetas',
+    'Auditoría',
     'Respaldo',
     'Configuración',
   ];
@@ -38,10 +50,16 @@ class _MainShellState extends State<MainShell> {
   static const _items = [
     (Icons.query_stats_rounded, 'Dashboard'),
     (Icons.inventory_2_rounded, 'Productos'),
-    (Icons.local_shipping_rounded, 'Proveedores'),
-    (Icons.description_rounded, 'Remitos'),
+    (Icons.compare_arrows_rounded, 'Comparador de listas'),
     (Icons.warehouse_rounded, 'Stock'),
+    (Icons.shopping_cart_rounded, 'Compras'),
+    (Icons.description_rounded, 'Remitos'),
     (Icons.groups_rounded, 'Clientes'),
+    (Icons.local_shipping_rounded, 'Proveedores'),
+    (Icons.sell_rounded, 'Listas de Precios'),
+    (Icons.bar_chart_rounded, 'Reportes'),
+    (Icons.label_rounded, 'Etiquetas'),
+    (Icons.history_edu_rounded, 'Auditoría'),
     (Icons.cloud_upload_rounded, 'Respaldo'),
     (Icons.settings_rounded, 'Configuración'),
   ];
@@ -49,10 +67,16 @@ class _MainShellState extends State<MainShell> {
   late final List<Widget> _pages = [
     const DashboardPage(),
     const ProductosPage(),
-    const ProveedoresPage(),
-    const RemitosPage(),
+    const ComparacionPage(),
     const StockPage(),
+    const ComprasPage(),
+    const RemitosPage(),
     const ClientesPage(),
+    const ProveedoresPage(),
+    const ListasPrecioPage(),
+    const ReportesPage(),
+    const EtiquetasPage(),
+    const AuditoriaPage(),
     const BackupPage(),
     const ConfiguracionPage(),
   ];
@@ -165,7 +189,7 @@ class _MainShellState extends State<MainShell> {
   }
 
   Widget _buildBottomBar() {
-    const quickItems = [0, 1, 3, 5]; // Dashboard, Productos, Remitos, Clientes
+    const quickItems = [0, 1, 5, 6]; // Dashboard, Productos, Remitos, Clientes
     return BottomNavigationBar(
       backgroundColor: const Color(0xFF0C111A),
       selectedItemColor: const Color(0xFFFF7A00),

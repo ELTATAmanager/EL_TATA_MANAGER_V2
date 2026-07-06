@@ -3,9 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models/lista_precio.dart';
 import '../models/producto.dart';
 import '../services/auth_service.dart';
+import '../services/lista_precio_service.dart';
 import '../services/producto_service.dart';
+import 'historial_precios_page.dart';
 
 class ProductoFormPage extends StatefulWidget {
   final Producto? producto;
@@ -21,6 +24,9 @@ class ProductoFormPage extends StatefulWidget {
 
 class _ProductoFormPageState extends State<ProductoFormPage> {
   final service = ProductoService();
+  final ListaPrecioService listaPrecioService = ListaPrecioService();
+
+  List<ListaPrecio> listasActivas = [];
 
   final codigoController = TextEditingController();
   final descripcionController = TextEditingController();
@@ -74,6 +80,14 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
       observacionesController.text = p.observaciones;
       foto = p.foto;
     }
+
+    _cargarListasPrecio();
+  }
+
+  Future<void> _cargarListasPrecio() async {
+    final listas = await listaPrecioService.obtenerActivas();
+    if (!mounted) return;
+    setState(() => listasActivas = listas);
   }
 
   @override
@@ -239,6 +253,24 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
         title: Text(
           widget.producto == null ? "Nuevo producto" : "Editar producto",
         ),
+        actions: [
+          if (widget.producto?.id != null)
+            IconButton(
+              icon: const Icon(Icons.history_rounded),
+              tooltip: 'Ver historial de precios',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => HistorialPreciosPage(
+                      productoId: widget.producto!.id!,
+                      productoDescripcion: widget.producto!.descripcion,
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(15),
@@ -318,6 +350,59 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
               lista: 3,
             ),
             const Divider(),
+            if (listasActivas.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Listas de precios dinámicas',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Calculadas automáticamente según el costo y el % configurado en Listas de Precios.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              AnimatedBuilder(
+                animation: costoController,
+                builder: (context, _) => Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: listasActivas.map((lista) {
+                    final costo = _parseDbl(costoController.text);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lista.nombre,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            '\$${lista.calcularPrecio(costo).toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const Divider(),
+            ],
             const SizedBox(height: 8),
             _campo("Observaciones", observacionesController),
             const SizedBox(height: 15),

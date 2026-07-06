@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import '../models/producto.dart';
 import 'comparador_service.dart';
 import 'producto_service.dart';
@@ -75,5 +77,26 @@ class CsvService {
       return 0;
     }
     return double.tryParse(valor) ?? 0;
+  }
+
+  /// Exports a generic set of rows to a CSV file (used by the Reportes page).
+  Future<File> exportarCsv(
+    String nombreArchivo,
+    List<String> headers,
+    List<List<dynamic>> filas,
+  ) async {
+    final csv = const ListToCsvConverter(fieldDelimiter: ';').convert([
+      headers,
+      ...filas,
+    ]);
+
+    final directorio = await getApplicationDocumentsDirectory();
+    final carpeta = Directory(p.join(directorio.path, 'reportes'));
+    if (!await carpeta.exists()) {
+      await carpeta.create(recursive: true);
+    }
+
+    final archivo = File(p.join(carpeta.path, nombreArchivo));
+    return archivo.writeAsString(csv, flush: true);
   }
 }

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/branding_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
+import 'listas_precio_page.dart';
 
 class ConfiguracionPage extends StatefulWidget {
   const ConfiguracionPage({super.key});
@@ -23,6 +24,13 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   final _sloganCtrl = TextEditingController();
   final _telefonoCtrl = TextEditingController();
   final _direccionCtrl = TextEditingController();
+  final _monedaCtrl = TextEditingController();
+  final _formatoFechaCtrl = TextEditingController();
+  final _cuitCtrl = TextEditingController();
+  final _condicionIvaCtrl = TextEditingController();
+  final _direccionFiscalCtrl = TextEditingController();
+  final _encabezadoPdfCtrl = TextEditingController();
+  final _piePdfCtrl = TextEditingController();
   String _logoPath = '';
   bool _guardandoBranding = false;
 
@@ -47,6 +55,13 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     _sloganCtrl.dispose();
     _telefonoCtrl.dispose();
     _direccionCtrl.dispose();
+    _monedaCtrl.dispose();
+    _formatoFechaCtrl.dispose();
+    _cuitCtrl.dispose();
+    _condicionIvaCtrl.dispose();
+    _direccionFiscalCtrl.dispose();
+    _encabezadoPdfCtrl.dispose();
+    _piePdfCtrl.dispose();
     super.dispose();
   }
 
@@ -56,6 +71,13 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     _sloganCtrl.text = b.slogan;
     _telefonoCtrl.text = b.telefono;
     _direccionCtrl.text = b.direccion;
+    _monedaCtrl.text = b.moneda;
+    _formatoFechaCtrl.text = b.formatoFecha;
+    _cuitCtrl.text = b.cuit;
+    _condicionIvaCtrl.text = b.condicionIva;
+    _direccionFiscalCtrl.text = b.direccionFiscal;
+    _encabezadoPdfCtrl.text = b.encabezadoPdf;
+    _piePdfCtrl.text = b.piePdf;
     setState(() => _logoPath = b.logoPath);
   }
 
@@ -73,6 +95,15 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
       telefono: _telefonoCtrl.text.trim(),
       direccion: _direccionCtrl.text.trim(),
       logoPath: _logoPath,
+      moneda: _monedaCtrl.text.trim().isEmpty ? r'$' : _monedaCtrl.text.trim(),
+      formatoFecha: _formatoFechaCtrl.text.trim().isEmpty
+          ? 'dd/MM/yyyy'
+          : _formatoFechaCtrl.text.trim(),
+      cuit: _cuitCtrl.text.trim(),
+      condicionIva: _condicionIvaCtrl.text.trim(),
+      direccionFiscal: _direccionFiscalCtrl.text.trim(),
+      encabezadoPdf: _encabezadoPdfCtrl.text.trim(),
+      piePdf: _piePdfCtrl.text.trim(),
     );
     if (!mounted) return;
     setState(() => _guardandoBranding = false);
@@ -205,6 +236,100 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Preferencias generales',
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _monedaCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Moneda',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.attach_money),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: _formatoFechaCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Formato de fecha',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.calendar_today),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Datos fiscales',
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _cuitCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'CUIT del negocio',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.badge),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _condicionIvaCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Condición frente al IVA',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.receipt_long),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _direccionFiscalCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Dirección fiscal',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.home_work_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Documentos PDF',
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _encabezadoPdfCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Encabezado de PDF',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.description_outlined),
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _piePdfCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Pie de PDF',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.notes),
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -218,6 +343,51 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                               )
                             : const Icon(Icons.save),
                         label: const Text('GUARDAR DATOS DEL NEGOCIO'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // ── Listas de precios ──────────────────────
+            Card(
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.sell_rounded, color: colorScheme.primary),
+                        const SizedBox(width: 10),
+                        Text(
+                          'PORCENTAJES DE LISTAS',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Creá, editá o desactivá las listas de precios usadas para calcular automáticamente el precio de venta según el costo.',
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ListasPrecioPage(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.arrow_forward_rounded),
+                        label: const Text('ADMINISTRAR LISTAS DE PRECIOS'),
                       ),
                     ),
                   ],

@@ -22,7 +22,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 6,
+      version: 10,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -118,6 +118,133 @@ CREATE TABLE comparacion(
     await _crearTablaMovimientosStock(db);
     await _crearTablaUsuarios(db);
     await _crearTablaAuditLog(db);
+    await _crearTablasCompras(db);
+    await _crearTablaListasPrecios(db);
+    await _crearTablaHistorialPrecios(db);
+  }
+
+  Future<void> _crearTablasCompras(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS compras(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  proveedorId INTEGER,
+  proveedorNombre TEXT,
+  numero TEXT,
+  fecha TEXT,
+  total REAL DEFAULT 0,
+  observaciones TEXT,
+  fechaCreacion TEXT,
+  estado TEXT DEFAULT 'confirmada',
+  FOREIGN KEY(proveedorId) REFERENCES proveedores(id)
+)
+''');
+
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS compra_items(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  compraId INTEGER NOT NULL,
+  productoId INTEGER NOT NULL,
+  productoDescripcion TEXT,
+  cantidad INTEGER DEFAULT 0,
+  costo REAL DEFAULT 0,
+  subtotal REAL DEFAULT 0,
+  FOREIGN KEY(compraId) REFERENCES compras(id),
+  FOREIGN KEY(productoId) REFERENCES productos(id)
+)
+''');
+  }
+
+  Future<void> _crearTablaListasPrecios(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS listas_precios(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL,
+  porcentaje REAL DEFAULT 0,
+  activa INTEGER DEFAULT 1,
+  orden INTEGER DEFAULT 0
+)
+''');
+
+    final count = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM listas_precios'),
+    )!;
+    if (count == 0) {
+      await db.insert('listas_precios', {
+        'nombre': 'Mayorista',
+        'porcentaje': 30.0,
+        'activa': 1,
+        'orden': 0,
+      });
+      await db.insert('listas_precios', {
+        'nombre': 'Minorista',
+        'porcentaje': 50.0,
+        'activa': 1,
+        'orden': 1,
+      });
+      await db.insert('listas_precios', {
+        'nombre': 'Taller',
+        'porcentaje': 40.0,
+        'activa': 1,
+        'orden': 2,
+      });
+    }
+  }
+
+  Future<void> _crearTablaHistorialPrecios(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS historial_precios(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  productoId INTEGER NOT NULL,
+  fecha TEXT NOT NULL,
+  usuario TEXT,
+  costoAnterior REAL DEFAULT 0,
+  costoNuevo REAL DEFAULT 0,
+  motivo TEXT,
+  FOREIGN KEY(productoId) REFERENCES productos(id)
+)
+''');
+  }
+
+  Future<void> _agregarColumnasClienteExtendido(Database db) async {
+    final columnas = {
+      'apellido': "TEXT DEFAULT ''",
+      'cuit': "TEXT DEFAULT ''",
+      'condicionIva': "TEXT DEFAULT ''",
+      'localidad': "TEXT DEFAULT ''",
+      'provincia': "TEXT DEFAULT ''",
+      'whatsapp': "TEXT DEFAULT ''",
+      'saldo': 'REAL DEFAULT 0',
+      'limiteCuenta': 'REAL DEFAULT 0',
+    };
+    for (final entry in columnas.entries) {
+      try {
+        await db.execute(
+          'ALTER TABLE clientes ADD COLUMN ${entry.key} ${entry.value}',
+        );
+      } catch (_) {
+        // column already exists
+      }
+    }
+  }
+
+  Future<void> _agregarColumnasProveedorExtendido(Database db) async {
+    final columnas = {
+      'contacto': "TEXT DEFAULT ''",
+      'cuit': "TEXT DEFAULT ''",
+      'whatsapp': "TEXT DEFAULT ''",
+      'web': "TEXT DEFAULT ''",
+      'condicionesComerciales': "TEXT DEFAULT ''",
+      'tiempoEntrega': "TEXT DEFAULT ''",
+    };
+    for (final entry in columnas.entries) {
+      try {
+        await db.execute(
+          'ALTER TABLE proveedores ADD COLUMN ${entry.key} ${entry.value}',
+        );
+      } catch (_) {
+        // column already exists
+      }
+    }
   }
 
   Future<void> _crearTablaUsuarios(Database db) async {
@@ -209,6 +336,23 @@ CREATE TABLE IF NOT EXISTS movimientos_stock(
     if (oldVersion < 6) {
       await _crearTablaUsuarios(db);
       await _crearTablaAuditLog(db);
+    }
+
+    if (oldVersion < 7) {
+      await _crearTablasCompras(db);
+    }
+
+    if (oldVersion < 8) {
+      await _crearTablaListasPrecios(db);
+    }
+
+    if (oldVersion < 9) {
+      await _crearTablaHistorialPrecios(db);
+    }
+
+    if (oldVersion < 10) {
+      await _agregarColumnasClienteExtendido(db);
+      await _agregarColumnasProveedorExtendido(db);
     }
   }
 
