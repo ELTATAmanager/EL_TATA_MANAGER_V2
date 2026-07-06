@@ -24,7 +24,7 @@ class CsvService {
   }
 
   Future<List<Producto>> leerArchivo() async {
-    final resultado = await FilePicker.platform.pickFiles(
+    final resultado = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
     );
@@ -33,9 +33,8 @@ class CsvService {
     }
     final archivo = File(resultado.files.single.path!);
     final contenido = await archivo.readAsString();
-    final filas = const CsvToListConverter(
+    final filas = const CsvDecoder(
       fieldDelimiter: ';',
-      shouldParseNumbers: false,
     ).convert(contenido);
     final List<Producto> productos = [];
     for (int i = 1; i < filas.length; i++) {
