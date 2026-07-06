@@ -29,12 +29,8 @@ class ComparadorService {
 
   Future<void> compararProductos(List<Producto> productosImportados) async {
     await limpiarComparacion();
-
     for (final productoNuevo in productosImportados) {
-      final productoViejo = await productoService.buscarPorCodigo(
-        productoNuevo.codigo,
-      );
-
+      final productoViejo = await productoService.buscarPorCodigo(productoNuevo.codigo);
       if (productoViejo == null) {
         await guardarComparacion(
           Comparacion(
@@ -47,14 +43,12 @@ class ComparadorService {
         );
         continue;
       }
-
       String estado = 'IGUAL';
       if (productoNuevo.precio > productoViejo.precio) {
         estado = 'AUMENTO';
       } else if (productoNuevo.precio < productoViejo.precio) {
         estado = 'BAJA';
       }
-
       await guardarComparacion(
         Comparacion(
           codigo: productoNuevo.codigo,
@@ -69,33 +63,25 @@ class ComparadorService {
 
   Future<int> cantidadAumentos() async {
     final db = await DatabaseHelper.instance.database;
-    final resultado = await db.rawQuery(
-      "SELECT COUNT(*) FROM comparacion WHERE estado='AUMENTO'",
-    );
+    final resultado = await db.rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='AUMENTO'");
     return Sqflite.firstIntValue(resultado) ?? 0;
   }
 
   Future<int> cantidadBajas() async {
     final db = await DatabaseHelper.instance.database;
-    final resultado = await db.rawQuery(
-      "SELECT COUNT(*) FROM comparacion WHERE estado='BAJA'",
-    );
+    final resultado = await db.rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='BAJA'");
     return Sqflite.firstIntValue(resultado) ?? 0;
   }
 
   Future<int> cantidadNuevos() async {
     final db = await DatabaseHelper.instance.database;
-    final resultado = await db.rawQuery(
-      "SELECT COUNT(*) FROM comparacion WHERE estado='NUEVO'",
-    );
+    final resultado = await db.rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='NUEVO'");
     return Sqflite.firstIntValue(resultado) ?? 0;
   }
 
   Future<int> cantidadIguales() async {
     final db = await DatabaseHelper.instance.database;
-    final resultado = await db.rawQuery(
-      "SELECT COUNT(*) FROM comparacion WHERE estado='IGUAL'",
-    );
+    final resultado = await db.rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='IGUAL'");
     return Sqflite.firstIntValue(resultado) ?? 0;
   }
 }
