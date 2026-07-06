@@ -28,7 +28,7 @@ class ThemeProvider extends ChangeNotifier {
     final safeColorIndex = colorIndex.clamp(
       0,
       AppTheme.coloresDisponibles.length - 1,
-    ) as int;
+    ).toInt();
     _color = AppTheme.coloresDisponibles[safeColorIndex];
     _fuente = AppTheme.fuentesDisponibles.contains(fuenteStr)
         ? fuenteStr
