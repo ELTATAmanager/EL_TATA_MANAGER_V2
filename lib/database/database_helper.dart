@@ -22,7 +22,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -116,6 +116,46 @@ CREATE TABLE comparacion(
 ''');
 
     await _crearTablaMovimientosStock(db);
+    await _crearTablaUsuarios(db);
+    await _crearTablaAuditLog(db);
+  }
+
+  Future<void> _crearTablaUsuarios(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS usuarios(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL,
+  usuario TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  rol TEXT DEFAULT 'usuario',
+  activo INTEGER DEFAULT 1
+)
+''');
+    // Default admin user
+    final count = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM usuarios'),
+    )!;
+    if (count == 0) {
+      await db.insert('usuarios', {
+        'nombre': 'Administrador',
+        'usuario': 'admin',
+        'password': 'admin',
+        'rol': 'admin',
+        'activo': 1,
+      });
+    }
+  }
+
+  Future<void> _crearTablaAuditLog(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS audit_log(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario TEXT NOT NULL,
+  accion TEXT NOT NULL,
+  detalle TEXT,
+  fecha TEXT NOT NULL
+)
+''');
   }
 
   Future<void> _crearTablaMovimientosStock(Database db) async {
@@ -163,6 +203,11 @@ CREATE TABLE IF NOT EXISTS movimientos_stock(
       await db.execute(
         'ALTER TABLE clientes ADD COLUMN descuento REAL DEFAULT 0',
       );
+    }
+
+    if (oldVersion < 6) {
+      await _crearTablaUsuarios(db);
+      await _crearTablaAuditLog(db);
     }
   }
 

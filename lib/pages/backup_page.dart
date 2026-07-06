@@ -84,9 +84,6 @@ class _BackupPageState extends State<BackupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Respaldo de datos'),
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

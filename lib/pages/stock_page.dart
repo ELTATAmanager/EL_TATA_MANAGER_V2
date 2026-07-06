@@ -255,9 +255,9 @@ class _StockPageState extends State<StockPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Stock'),
-          bottom: TabBar(
-            indicatorColor: Theme.of(context).colorScheme.primary,
+          automaticallyImplyLeading: false,
+          toolbarHeight: 0,
+          bottom: const TabBar(
             tabs: [
               Tab(text: 'Movimientos'),
               Tab(text: 'Alertas'),

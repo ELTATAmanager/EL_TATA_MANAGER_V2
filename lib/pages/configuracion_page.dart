@@ -104,7 +104,6 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Configuración')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

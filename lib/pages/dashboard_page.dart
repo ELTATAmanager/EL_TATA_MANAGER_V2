@@ -157,15 +157,6 @@ class _DashboardPageState extends State<DashboardPage> {
     final sinStockColor = AppVisuals.danger(colorScheme);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Dashboard"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: cargar,
-          ),
-        ],
-      ),
       body: cargando
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
