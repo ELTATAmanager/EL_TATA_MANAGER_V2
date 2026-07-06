@@ -95,6 +95,7 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
         );
       }
 
+      if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -105,9 +106,11 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
         ),
       );
     } finally {
-      setState(() {
-        guardando = false;
-      });
+      if (mounted) {
+        setState(() {
+          guardando = false;
+        });
+      }
     }
   }
 
