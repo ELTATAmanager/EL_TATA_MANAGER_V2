@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/producto.dart';
+import 'comparador_service.dart';
 import 'producto_service.dart';
 
 class CsvService {
   final ProductoService produtoService = ProductoService();
+  final ComparadorService comparadorService = ComparadorService();
 
   Future<int> analizarArchivo() async {
     final productos = await leerArchivo();
@@ -15,6 +17,8 @@ class CsvService {
     final existeBase = await produtoService.tieneProductos();
     if (!existeBase) {
       await produtoService.insertarLista(productos);
+    } else {
+      await comparadorService.compararProductos(productos);
     }
     return productos.length;
   }

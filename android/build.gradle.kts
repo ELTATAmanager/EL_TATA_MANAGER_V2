@@ -19,6 +19,14 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+subprojects {
+    afterEvaluate {
+        (extensions.findByName("android") as? com.android.build.api.dsl.CommonExtension<*, *, *, *, *, *>)?.run {
+            compileSdk = 36
+        }
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

@@ -7,7 +7,7 @@ import 'producto_service.dart';
 class ComparadorService {
   final ProductoService productoService = ProductoService();
 
-  Future<void> limpiarComparacion() async {
+  Future<void> limpiarComparaciones() async {
     final db = await DatabaseHelper.instance.database;
     await db.delete('comparacion');
   }
@@ -28,9 +28,10 @@ class ComparadorService {
   }
 
   Future<void> compararProductos(List<Producto> productosImportados) async {
-    await limpiarComparacion();
+    await limpiarComparaciones();
     for (final productoNuevo in productosImportados) {
-      final productoViejo = await productoService.buscarPorCodigo(productoNuevo.codigo);
+      final productoViejo =
+          await productoService.buscarPorCodigo(productoNuevo.codigo);
       if (productoViejo == null) {
         await guardarComparacion(
           Comparacion(
@@ -39,15 +40,16 @@ class ComparadorService {
             precioViejo: 0,
             precioNuevo: productoNuevo.precio,
             estado: 'NUEVO',
+            marca: productoNuevo.marca,
           ),
         );
         continue;
       }
       String estado = 'IGUAL';
       if (productoNuevo.precio > productoViejo.precio) {
-        estado = 'AUMENTO';
+        estado = 'SUBIO';
       } else if (productoNuevo.precio < productoViejo.precio) {
-        estado = 'BAJA';
+        estado = 'BAJO';
       }
       await guardarComparacion(
         Comparacion(
@@ -56,32 +58,65 @@ class ComparadorService {
           precioViejo: productoViejo.precio,
           precioNuevo: productoNuevo.precio,
           estado: estado,
+          marca: productoNuevo.marca,
         ),
       );
     }
   }
 
+  Future<void> actualizarProductos() async {
+    final comparaciones = await obtenerComparacion();
+    for (final comp in comparaciones) {
+      final producto = await productoService.buscarPorCodigo(comp.codigo);
+      if (producto != null) {
+        await productoService.actualizar(
+          producto.copyWith(precio: comp.precioNuevo),
+        );
+      } else {
+        await productoService.insertar(
+          Producto(
+            codigo: comp.codigo,
+            descripcion: comp.descripcion,
+            marca: comp.marca,
+            categoria: '',
+            proveedor: '',
+            ubicacion: '',
+            stock: 0,
+            costo: 0,
+            precio: comp.precioNuevo,
+            observaciones: '',
+            foto: '',
+          ),
+        );
+      }
+    }
+  }
+
   Future<int> cantidadAumentos() async {
     final db = await DatabaseHelper.instance.database;
-    final resultado = await db.rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='AUMENTO'");
+    final resultado = await db
+        .rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='SUBIO'");
     return Sqflite.firstIntValue(resultado) ?? 0;
   }
 
   Future<int> cantidadBajas() async {
     final db = await DatabaseHelper.instance.database;
-    final resultado = await db.rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='BAJA'");
+    final resultado = await db
+        .rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='BAJO'");
     return Sqflite.firstIntValue(resultado) ?? 0;
   }
 
   Future<int> cantidadNuevos() async {
     final db = await DatabaseHelper.instance.database;
-    final resultado = await db.rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='NUEVO'");
+    final resultado = await db
+        .rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='NUEVO'");
     return Sqflite.firstIntValue(resultado) ?? 0;
   }
 
   Future<int> cantidadIguales() async {
     final db = await DatabaseHelper.instance.database;
-    final resultado = await db.rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='IGUAL'");
+    final resultado = await db
+        .rawQuery("SELECT COUNT(*) FROM comparacion WHERE estado='IGUAL'");
     return Sqflite.firstIntValue(resultado) ?? 0;
   }
 }

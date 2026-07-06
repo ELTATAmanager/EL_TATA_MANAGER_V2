@@ -9,9 +9,11 @@ class Remito {
   String? clienteId;   // si es salida
   
   String estado; // 'pendiente', 'confirmado', 'anulado'
+  String estadoPago; // 'pendiente', 'parcial', 'cobrado'
   String observaciones;
 
   double total;
+  double descuento;
 
   Remito({
     this.id,
@@ -21,8 +23,10 @@ class Remito {
     this.proveedorId,
     this.clienteId,
     required this.estado,
+    this.estadoPago = 'pendiente',
     required this.observaciones,
     required this.total,
+    this.descuento = 0.0,
   });
 
   Map<String, dynamic> toMap() {
@@ -34,8 +38,10 @@ class Remito {
       'proveedorId': proveedorId,
       'clienteId': clienteId,
       'estado': estado,
+      'estadoPago': estadoPago,
       'observaciones': observaciones,
       'total': total,
+      'descuento': descuento,
     };
   }
 
@@ -48,8 +54,10 @@ class Remito {
       proveedorId: map['proveedorId'],
       clienteId: map['clienteId'],
       estado: map['estado'] ?? 'pendiente',
+      estadoPago: map['estadoPago'] ?? 'pendiente',
       observaciones: map['observaciones'] ?? '',
       total: (map['total'] ?? 0).toDouble(),
+      descuento: (map['descuento'] ?? 0).toDouble(),
     );
   }
 
@@ -61,8 +69,10 @@ class Remito {
     String? proveedorId,
     String? clienteId,
     String? estado,
+    String? estadoPago,
     String? observaciones,
     double? total,
+    double? descuento,
   }) {
     return Remito(
       id: id ?? this.id,
@@ -72,8 +82,10 @@ class Remito {
       proveedorId: proveedorId ?? this.proveedorId,
       clienteId: clienteId ?? this.clienteId,
       estado: estado ?? this.estado,
+      estadoPago: estadoPago ?? this.estadoPago,
       observaciones: observaciones ?? this.observaciones,
       total: total ?? this.total,
+      descuento: descuento ?? this.descuento,
     );
   }
 }

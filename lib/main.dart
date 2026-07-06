@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'pages/inicio_page.dart';
+import 'services/branding_service.dart';
+import 'theme/theme_provider.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  initializeThemeProvider();
+  await BrandingService.instance.cargar();
 
   if (!kIsWeb) {
     sqfliteFfiInit();
@@ -15,20 +19,40 @@ void main() {
   runApp(const ElTataApp());
 }
 
-class ElTataApp extends StatelessWidget {
+class ElTataApp extends StatefulWidget {
   const ElTataApp({super.key});
+
+  @override
+  State<ElTataApp> createState() => _ElTataAppState();
+}
+
+class _ElTataAppState extends State<ElTataApp> {
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    themeProvider.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    themeProvider.removeListener(_onThemeChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'EL TATA Manager',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.orange,
-        ),
-        useMaterial3: true,
-      ),
+      theme: themeProvider.lightTheme,
+      darkTheme: themeProvider.darkTheme,
+      themeMode: themeProvider.mode,
       home: const InicioPage(),
     );
   }

@@ -21,8 +21,9 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 5,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -39,6 +40,8 @@ CREATE TABLE productos(
   stock INTEGER DEFAULT 0,
   costo REAL DEFAULT 0,
   precio REAL DEFAULT 0,
+  precio2 REAL DEFAULT 0,
+  precio3 REAL DEFAULT 0,
   observaciones TEXT,
   foto TEXT
 )
@@ -65,6 +68,7 @@ CREATE TABLE clientes(
   direccion TEXT,
   observaciones TEXT,
   fechaCreacion TEXT,
+  descuento REAL DEFAULT 0,
   activo INTEGER DEFAULT 1
 )
 ''');
@@ -76,7 +80,9 @@ CREATE TABLE remitos(
   clienteId INTEGER,
   fecha TEXT,
   total REAL DEFAULT 0,
+  descuento REAL DEFAULT 0,
   estado TEXT,
+  estadoPago TEXT DEFAULT 'pendiente',
   observaciones TEXT,
   fechaCreacion TEXT,
   FOREIGN KEY(clienteId) REFERENCES clientes(id)
@@ -103,13 +109,67 @@ CREATE TABLE comparacion(
   descripcion TEXT,
   precioViejo REAL,
   precioNuevo REAL,
-  estado TEXT
+  estado TEXT,
+  marca TEXT
+)
+''');
+
+    await _crearTablaMovimientosStock(db);
+  }
+
+  Future<void> _crearTablaMovimientosStock(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS movimientos_stock(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  productoId INTEGER NOT NULL,
+  tipo TEXT NOT NULL,
+  cantidad INTEGER NOT NULL,
+  fecha TEXT NOT NULL,
+  remitoId TEXT,
+  motivo TEXT,
+  FOREIGN KEY(productoId) REFERENCES productos(id)
 )
 ''');
   }
 
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+        "ALTER TABLE comparacion ADD COLUMN marca TEXT DEFAULT ''",
+      );
+    }
+
+    if (oldVersion < 3) {
+      await _crearTablaMovimientosStock(db);
+    }
+
+    if (oldVersion < 4) {
+      await db.execute(
+        'ALTER TABLE remitos ADD COLUMN descuento REAL DEFAULT 0',
+      );
+      await db.execute(
+        "ALTER TABLE remitos ADD COLUMN estadoPago TEXT DEFAULT 'pendiente'",
+      );
+    }
+
+    if (oldVersion < 5) {
+      await db.execute(
+        'ALTER TABLE productos ADD COLUMN precio2 REAL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE productos ADD COLUMN precio3 REAL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE clientes ADD COLUMN descuento REAL DEFAULT 0',
+      );
+    }
+  }
+
   Future<void> cerrar() async {
-    final db = await database;
-    await db.close();
+    final db = _database;
+    if (db != null && db.isOpen) {
+      await db.close();
+    }
+    _database = null;
   }
 }

@@ -2,7 +2,7 @@ class MovimientoStock {
   int? id;
 
   int productoId;
-  String tipo; // 'entrada', 'salida', 'ajuste'
+  String tipo; // 'entrada', 'salida', 'ajuste', 'reversion'
   int cantidad;
   
   DateTime fecha;
