@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../services/csv_service.dart';
+import 'clientes_page.dart';
 import 'comparacion_page.dart';
+import 'dashboard_page.dart';
 import 'productos_page.dart';
 import 'proveedores_page.dart';
+import 'remitos_page.dart';
 
 class InicioPage extends StatefulWidget {
   const InicioPage({super.key});
@@ -69,6 +72,18 @@ class _InicioPageState extends State<InicioPage> {
       appBar: AppBar(
         title: const Text("EL TATA Manager"),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard),
+            tooltip: "Dashboard",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DashboardPage()),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -162,9 +177,10 @@ class _InicioPageState extends State<InicioPage> {
                   icon: Icons.people,
                   title: "Clientes",
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Próximamente..."),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ClientesPage(),
                       ),
                     );
                   },
@@ -173,9 +189,22 @@ class _InicioPageState extends State<InicioPage> {
                   icon: Icons.receipt,
                   title: "Remitos",
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Próximamente..."),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const RemitosPage(),
+                      ),
+                    );
+                  },
+                ),
+                _ModuleCard(
+                  icon: Icons.dashboard,
+                  title: "Dashboard",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DashboardPage(),
                       ),
                     );
                   },
