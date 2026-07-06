@@ -232,7 +232,10 @@ class PdfService {
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Subtotal:', style: pw.TextStyle(fontSize: 10)),
+                        const pw.Text(
+                          'Subtotal:',
+                          style: pw.TextStyle(fontSize: 10),
+                        ),
                         pw.Text(
                           '\$${(total / (1 - descuento / 100)).toStringAsFixed(2)}',
                           style: const pw.TextStyle(fontSize: 10),
