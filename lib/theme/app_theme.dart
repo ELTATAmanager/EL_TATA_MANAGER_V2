@@ -65,7 +65,7 @@ class AppTheme {
         centerTitle: true,
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: colorScheme.surface,
         elevation: 2,
         shadowColor: colorScheme.shadow.withValues(alpha: 0.08),
