@@ -33,7 +33,7 @@ class CsvService {
     }
     final archivo = File(resultado.files.single.path!);
     final contenido = await archivo.readAsString();
-    final filas = const CsvDecoder(
+    final filas = CsvDecoder(
       fieldDelimiter: ';',
     ).convert(contenido);
     final List<Producto> productos = [];
