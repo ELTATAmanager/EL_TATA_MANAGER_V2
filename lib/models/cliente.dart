@@ -5,6 +5,7 @@ class Cliente {
   String telefono;
   String direccion;
   String observaciones;
+  double descuento;
 
   Cliente({
     this.id,
@@ -12,6 +13,7 @@ class Cliente {
     required this.telefono,
     required this.direccion,
     required this.observaciones,
+    this.descuento = 0.0,
   });
 
   Map<String, dynamic> toMap() {
@@ -21,6 +23,7 @@ class Cliente {
       "telefono": telefono,
       "direccion": direccion,
       "observaciones": observaciones,
+      "descuento": descuento,
     };
   }
 
@@ -31,6 +34,25 @@ class Cliente {
       telefono: map["telefono"] ?? "",
       direccion: map["direccion"] ?? "",
       observaciones: map["observaciones"] ?? "",
+      descuento: (map["descuento"] ?? 0).toDouble(),
+    );
+  }
+
+  Cliente copyWith({
+    int? id,
+    String? nombre,
+    String? telefono,
+    String? direccion,
+    String? observaciones,
+    double? descuento,
+  }) {
+    return Cliente(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      telefono: telefono ?? this.telefono,
+      direccion: direccion ?? this.direccion,
+      observaciones: observaciones ?? this.observaciones,
+      descuento: descuento ?? this.descuento,
     );
   }
 }

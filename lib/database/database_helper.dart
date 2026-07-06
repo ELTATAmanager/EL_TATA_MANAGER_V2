@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -40,6 +40,8 @@ CREATE TABLE productos(
   stock INTEGER DEFAULT 0,
   costo REAL DEFAULT 0,
   precio REAL DEFAULT 0,
+  precio2 REAL DEFAULT 0,
+  precio3 REAL DEFAULT 0,
   observaciones TEXT,
   foto TEXT
 )
@@ -66,6 +68,7 @@ CREATE TABLE clientes(
   direccion TEXT,
   observaciones TEXT,
   fechaCreacion TEXT,
+  descuento REAL DEFAULT 0,
   activo INTEGER DEFAULT 1
 )
 ''');
@@ -146,6 +149,18 @@ CREATE TABLE IF NOT EXISTS movimientos_stock(
       );
       await db.execute(
         "ALTER TABLE remitos ADD COLUMN estadoPago TEXT DEFAULT 'pendiente'",
+      );
+    }
+
+    if (oldVersion < 5) {
+      await db.execute(
+        'ALTER TABLE productos ADD COLUMN precio2 REAL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE productos ADD COLUMN precio3 REAL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE clientes ADD COLUMN descuento REAL DEFAULT 0',
       );
     }
   }

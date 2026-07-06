@@ -4,6 +4,7 @@ import '../services/csv_service.dart';
 import 'backup_page.dart';
 import 'clientes_page.dart';
 import 'comparacion_page.dart';
+import 'configuracion_page.dart';
 import 'dashboard_page.dart';
 import 'productos_page.dart';
 import 'proveedores_page.dart';
@@ -21,6 +22,7 @@ class _InicioPageState extends State<InicioPage> {
   final CsvService csvService = CsvService();
 
   bool cargando = false;
+  int railIndex = 0;
 
   Future<void> analizar() async {
     setState(() {
@@ -39,9 +41,7 @@ class _InicioPageState extends State<InicioPage> {
       if (cantidad == 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              "No se seleccionó ningún archivo.",
-            ),
+            content: Text("No se seleccionó ningún archivo."),
           ),
         );
         return;
@@ -68,6 +68,176 @@ class _InicioPageState extends State<InicioPage> {
     }
   }
 
+  void _abrirPagina(Widget page) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+    );
+  }
+
+  List<_ModuleConfig> _buildModules() {
+    return [
+      _ModuleConfig(
+        icon: Icons.inventory,
+        title: "Productos",
+        color: Colors.blue,
+        onTap: () => _abrirPagina(const ProductosPage()),
+      ),
+      _ModuleConfig(
+        icon: Icons.business,
+        title: "Proveedores",
+        color: Colors.teal,
+        onTap: () => _abrirPagina(const ProveedoresPage()),
+      ),
+      _ModuleConfig(
+        icon: Icons.people,
+        title: "Clientes",
+        color: Colors.purple,
+        onTap: () => _abrirPagina(const ClientesPage()),
+      ),
+      _ModuleConfig(
+        icon: Icons.receipt,
+        title: "Remitos",
+        color: Colors.orange,
+        onTap: () => _abrirPagina(const RemitosPage()),
+      ),
+      _ModuleConfig(
+        icon: Icons.inventory_2,
+        title: "Stock",
+        color: Colors.green,
+        onTap: () => _abrirPagina(const StockPage()),
+      ),
+      _ModuleConfig(
+        icon: Icons.dashboard,
+        title: "Dashboard",
+        color: Colors.indigo,
+        onTap: () => _abrirPagina(const DashboardPage()),
+      ),
+      _ModuleConfig(
+        icon: Icons.backup,
+        title: "Respaldo",
+        color: Colors.grey,
+        onTap: () => _abrirPagina(const BackupPage()),
+      ),
+      _ModuleConfig(
+        icon: Icons.settings,
+        title: "Configuración",
+        color: Colors.grey,
+        onTap: () => _abrirPagina(const ConfiguracionPage()),
+      ),
+    ];
+  }
+
+  void _onRailSelected(int index) {
+    setState(() => railIndex = index);
+    switch (index) {
+      case 1:
+        _abrirPagina(const ProductosPage());
+        break;
+      case 2:
+        _abrirPagina(const ClientesPage());
+        break;
+      case 3:
+        _abrirPagina(const RemitosPage());
+        break;
+      case 4:
+        _abrirPagina(const DashboardPage());
+        break;
+      case 5:
+        _abrirPagina(const ConfiguracionPage());
+        break;
+      default:
+        break;
+    }
+  }
+
+  Widget _buildHomeContent({required int crossAxisCount}) {
+    final modules = _buildModules();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Column(
+            children: [
+              Card(
+                elevation: 6,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.store,
+                        color: Colors.orange,
+                        size: 64,
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        "EL TATA Manager",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Gestor de inventario y ventas",
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 28),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton.icon(
+                          onPressed: cargando ? null : analizar,
+                          icon: const Icon(Icons.analytics),
+                          label: const Text("ANALIZAR LISTA"),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (cargando) const CircularProgressIndicator(),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+              const Text(
+                "MÓDULOS",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: modules.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.1,
+                ),
+                itemBuilder: (context, index) {
+                  final module = modules[index];
+                  return _ModuleCard(
+                    icon: module.icon,
+                    title: module.title,
+                    color: module.color,
+                    onTap: module.onTap,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,177 +249,79 @@ class _InicioPageState extends State<InicioPage> {
             icon: const Icon(Icons.dashboard),
             tooltip: "Dashboard",
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DashboardPage()),
-              );
+              _abrirPagina(const DashboardPage());
             },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Card(
-              elevation: 6,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.store,
-                      color: Colors.orange,
-                      size: 64,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth >= 600) {
+            final crossAxisCount = constraints.maxWidth >= 1000 ? 3 : 2;
+            return Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: railIndex,
+                  onDestinationSelected: _onRailSelected,
+                  labelType: NavigationRailLabelType.all,
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(Icons.home),
+                      label: Text('Inicio'),
                     ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      "EL TATA Manager",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.inventory_2_outlined),
+                      selectedIcon: Icon(Icons.inventory_2),
+                      label: Text('Productos'),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "Gestor de inventario y proveedores",
-                      textAlign: TextAlign.center,
+                    NavigationRailDestination(
+                      icon: Icon(Icons.people_outline),
+                      selectedIcon: Icon(Icons.people),
+                      label: Text('Clientes'),
                     ),
-                    const SizedBox(height: 28),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton.icon(
-                        onPressed: cargando ? null : analizar,
-                        icon: const Icon(Icons.analytics),
-                        label: const Text(
-                          "ANALIZAR LISTA",
-                        ),
-                      ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.receipt_long_outlined),
+                      selectedIcon: Icon(Icons.receipt_long),
+                      label: Text('Remitos'),
                     ),
-                    const SizedBox(height: 20),
-                    if (cargando)
-                      const CircularProgressIndicator(),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.dashboard_outlined),
+                      selectedIcon: Icon(Icons.dashboard),
+                      label: Text('Dashboard'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.settings_outlined),
+                      selectedIcon: Icon(Icons.settings),
+                      label: Text('Config'),
+                    ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            const Text(
-              "MÓDULOS",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.1,
-              children: [
-                _ModuleCard(
-                  icon: Icons.inventory,
-                  title: "Productos",
-                  color: Colors.blue,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProductosPage(),
-                      ),
-                    );
-                  },
-                ),
-                _ModuleCard(
-                  icon: Icons.business,
-                  title: "Proveedores",
-                  color: Colors.teal,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProveedoresPage(),
-                      ),
-                    );
-                  },
-                ),
-                _ModuleCard(
-                  icon: Icons.people,
-                  title: "Clientes",
-                  color: Colors.purple,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ClientesPage(),
-                      ),
-                    );
-                  },
-                ),
-                _ModuleCard(
-                  icon: Icons.receipt,
-                  title: "Remitos",
-                  color: Colors.orange,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const RemitosPage(),
-                      ),
-                    );
-                  },
-                ),
-                _ModuleCard(
-                  icon: Icons.inventory_2,
-                  title: "Stock",
-                  color: Colors.green,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const StockPage(),
-                      ),
-                    );
-                  },
-                ),
-                _ModuleCard(
-                  icon: Icons.dashboard,
-                  title: "Dashboard",
-                  color: Colors.indigo,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const DashboardPage(),
-                      ),
-                    );
-                  },
-                ),
-                _ModuleCard(
-                  icon: Icons.backup,
-                  title: "Respaldo",
-                  color: Colors.grey,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const BackupPage(),
-                      ),
-                    );
-                  },
-                ),
+                const VerticalDivider(width: 1),
+                Expanded(child: _buildHomeContent(crossAxisCount: crossAxisCount)),
               ],
-            ),
-          ],
-        ),
+            );
+          }
+
+          return _buildHomeContent(crossAxisCount: 2);
+        },
       ),
     );
   }
+}
+
+class _ModuleConfig {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final Color color;
+
+  const _ModuleConfig({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    required this.color,
+  });
 }
 
 class _ModuleCard extends StatelessWidget {

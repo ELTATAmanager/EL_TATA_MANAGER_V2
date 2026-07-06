@@ -23,6 +23,9 @@ dependencies:
   pdf: ^3.11.3
   printing: ^5.14.2
   share_plus: ^11.0.0
+  mobile_scanner: ^6.0.10
+  google_fonts: ^6.2.1
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:

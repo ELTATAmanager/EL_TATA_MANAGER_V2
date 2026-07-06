@@ -11,6 +11,7 @@ import '../services/cliente_service.dart';
 import '../services/pdf_service.dart';
 import '../services/producto_service.dart';
 import '../services/remito_service.dart';
+import 'scanner_page.dart';
 
 class _ItemRemito {
   final Producto producto;
@@ -39,10 +40,8 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
   final ProductoService productoService = ProductoService();
   final PdfService pdfService = PdfService();
 
-  final TextEditingController observacionesController =
-      TextEditingController();
-  final TextEditingController buscarProductoController =
-      TextEditingController();
+  final TextEditingController observacionesController = TextEditingController();
+  final TextEditingController buscarProductoController = TextEditingController();
 
   List<Cliente> clientes = [];
   List<Producto> productos = [];
@@ -60,12 +59,26 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
     cargarDatos();
   }
 
+  @override
+  void dispose() {
+    observacionesController.dispose();
+    buscarProductoController.dispose();
+    super.dispose();
+  }
+
   Future<void> cargarDatos() async {
     clientes = await clienteService.obtenerTodos();
     productos = await productoService.obtenerTodos();
     productosFiltrados = productos;
     if (!mounted) return;
     setState(() => cargando = false);
+  }
+
+  Future<String?> _abrirScanner() {
+    return Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const ScannerPage()),
+    );
   }
 
   void filtrarProductos(String texto) {
@@ -76,6 +89,13 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
             p.codigo.toLowerCase().contains(texto))
         .toList();
     setState(() {});
+  }
+
+  void _seleccionarCliente(Cliente? cliente) {
+    setState(() {
+      clienteSeleccionado = cliente;
+      descuento = ((cliente?.descuento ?? 0).clamp(0.0, 100.0)).toDouble();
+    });
   }
 
   double get total => items.fold(0, (sum, i) => sum + i.subtotal);
@@ -135,20 +155,38 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                TextField(
-                  controller: buscarProductoController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar producto...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: buscarProductoController,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: 'Buscar producto...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onChanged: (v) {
+                          filtrarProductos(v);
+                          setModalState(() {});
+                        },
+                      ),
                     ),
-                  ),
-                  onChanged: (v) {
-                    filtrarProductos(v);
-                    setModalState(() {});
-                  },
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      tooltip: 'Escanear código',
+                      onPressed: () async {
+                        final codigo = await _abrirScanner();
+                        if (codigo == null || codigo.trim().isEmpty) return;
+                        buscarProductoController.text = codigo;
+                        filtrarProductos(codigo);
+                        setModalState(() {});
+                      },
+                      icon: const Icon(Icons.qr_code_scanner),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -241,8 +279,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                 prefixText: '\$',
                 border: OutlineInputBorder(),
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
           ],
         ),
@@ -328,7 +365,8 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
       'descuento': remito.descuento,
     };
     final itemsPdf = detalles.map((detalle) {
-      final producto = items.firstWhere((item) => item.producto.id == detalle.productoId).producto;
+      final producto =
+          items.firstWhere((item) => item.producto.id == detalle.productoId).producto;
       return {
         'descripcion': producto.descripcion,
         'cantidad': detalle.cantidad,
@@ -459,6 +497,8 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final descuentoCliente = clienteSeleccionado?.descuento ?? 0;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nuevo Remito'),
@@ -483,20 +523,32 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                             ),
                           ),
                           items: clientes
-                              .map((c) => DropdownMenuItem(
-                                    value: c,
-                                    child: Text(c.nombre),
-                                  ))
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(c.nombre),
+                                ),
+                              )
                               .toList(),
-                          onChanged: (c) =>
-                              setState(() => clienteSeleccionado = c),
+                          onChanged: _seleccionarCliente,
                           hint: const Text('Seleccionar cliente'),
                         ),
+                        if (descuentoCliente > 0) ...[
+                          const SizedBox(height: 8),
+                          Chip(
+                            avatar: const Icon(Icons.percent, size: 18),
+                            label: Text(
+                              'Descuento del cliente: ${descuentoCliente.toStringAsFixed(1)}%',
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         const Text(
                           'Productos',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         if (items.isEmpty)
@@ -549,8 +601,11 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete,
-                                          color: Colors.red, size: 20),
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                        size: 20,
+                                      ),
                                       onPressed: () {
                                         setState(() => items.removeAt(idx));
                                       },
@@ -623,8 +678,10 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text('TOTAL',
-                                    style: TextStyle(color: Colors.grey)),
+                                const Text(
+                                  'TOTAL',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
                                 Text(
                                   '\$${totalConDescuento.toStringAsFixed(2)}',
                                   style: const TextStyle(
@@ -643,13 +700,16 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                                     width: 20,
                                     height: 20,
                                     child: CircularProgressIndicator(
-                                        strokeWidth: 2),
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Icon(Icons.save),
                             label: const Text('GUARDAR'),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 14),
+                                horizontal: 24,
+                                vertical: 14,
+                              ),
                             ),
                           ),
                         ],

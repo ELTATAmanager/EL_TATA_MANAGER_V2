@@ -20,6 +20,7 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
   late TextEditingController telefonoController;
   late TextEditingController direccionController;
   late TextEditingController observacionesController;
+  late TextEditingController descuentoController;
 
   bool guardando = false;
 
@@ -28,14 +29,16 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
   @override
   void initState() {
     super.initState();
-    nombreController =
-        TextEditingController(text: widget.cliente?.nombre ?? '');
+    nombreController = TextEditingController(text: widget.cliente?.nombre ?? '');
     telefonoController =
         TextEditingController(text: widget.cliente?.telefono ?? '');
     direccionController =
         TextEditingController(text: widget.cliente?.direccion ?? '');
     observacionesController =
         TextEditingController(text: widget.cliente?.observaciones ?? '');
+    descuentoController = TextEditingController(
+      text: (widget.cliente?.descuento ?? 0).toStringAsFixed(1),
+    );
   }
 
   @override
@@ -44,6 +47,7 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
     telefonoController.dispose();
     direccionController.dispose();
     observacionesController.dispose();
+    descuentoController.dispose();
     super.dispose();
   }
 
@@ -52,12 +56,18 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
 
     setState(() => guardando = true);
 
+    final descuento =
+        (double.tryParse(descuentoController.text.replaceAll(',', '.')) ?? 0)
+            .clamp(0.0, 100.0)
+            .toDouble();
+
     final cliente = Cliente(
       id: widget.cliente?.id,
       nombre: nombreController.text.trim(),
       telefono: telefonoController.text.trim(),
       direccion: direccionController.text.trim(),
       observaciones: observacionesController.text.trim(),
+      descuento: descuento,
     );
 
     if (esEdicion) {
@@ -110,6 +120,31 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
                   prefixIcon: Icon(Icons.location_on),
                   border: OutlineInputBorder(),
                 ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: descuentoController,
+                decoration: const InputDecoration(
+                  labelText: "Descuento (%)",
+                  prefixIcon: Icon(Icons.percent),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  final texto = (value ?? '').trim();
+                  if (texto.isEmpty) {
+                    return null;
+                  }
+                  final descuento = double.tryParse(texto.replaceAll(',', '.'));
+                  if (descuento == null) {
+                    return 'Ingresá un número válido';
+                  }
+                  if (descuento < 0 || descuento > 100) {
+                    return 'El descuento debe estar entre 0 y 100';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(

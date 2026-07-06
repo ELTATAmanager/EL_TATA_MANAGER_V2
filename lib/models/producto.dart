@@ -12,6 +12,8 @@ class Producto {
 
   double costo;
   double precio;
+  double precio2;
+  double precio3;
 
   String observaciones;
   String foto;
@@ -27,6 +29,8 @@ class Producto {
     required this.stock,
     required this.costo,
     required this.precio,
+    this.precio2 = 0.0,
+    this.precio3 = 0.0,
     required this.observaciones,
     required this.foto,
   });
@@ -43,6 +47,8 @@ class Producto {
       'stock': stock,
       'costo': costo,
       'precio': precio,
+      'precio2': precio2,
+      'precio3': precio3,
       'observaciones': observaciones,
       'foto': foto,
     };
@@ -60,6 +66,8 @@ class Producto {
       stock: map['stock'] ?? 0,
       costo: (map['costo'] ?? 0).toDouble(),
       precio: (map['precio'] ?? 0).toDouble(),
+      precio2: (map['precio2'] ?? 0).toDouble(),
+      precio3: (map['precio3'] ?? 0).toDouble(),
       observaciones: map['observaciones'] ?? '',
       foto: map['foto'] ?? '',
     );
@@ -76,6 +84,8 @@ class Producto {
     int? stock,
     double? costo,
     double? precio,
+    double? precio2,
+    double? precio3,
     String? observaciones,
     String? foto,
   }) {
@@ -90,6 +100,8 @@ class Producto {
       stock: stock ?? this.stock,
       costo: costo ?? this.costo,
       precio: precio ?? this.precio,
+      precio2: precio2 ?? this.precio2,
+      precio3: precio3 ?? this.precio3,
       observaciones: observaciones ?? this.observaciones,
       foto: foto ?? this.foto,
     );
