@@ -20,13 +20,8 @@ subprojects {
 }
 
 subprojects {
-    pluginManager.withPlugin("com.android.application") {
-        extensions.configure<com.android.build.api.dsl.ApplicationExtension>("android") {
-            compileSdk = 36
-        }
-    }
-    pluginManager.withPlugin("com.android.library") {
-        extensions.configure<com.android.build.api.dsl.LibraryExtension>("android") {
+    afterEvaluate {
+        (extensions.findByName("android") as? com.android.build.api.dsl.CommonExtension<*, *, *, *, *, *>)?.run {
             compileSdk = 36
         }
     }
