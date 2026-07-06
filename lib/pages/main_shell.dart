@@ -212,8 +212,8 @@ class _MainShellState extends State<MainShell> {
     if (desktop) {
       await showDialog<void>(
         context: context,
-        builder: (_) => Dialog.fullscreen(
-          backgroundColor: const Color(0xFF07090F),
+        builder: (ctx) => Dialog.fullscreen(
+          backgroundColor: Theme.of(ctx).colorScheme.surface,
           child: const BusquedaGlobalPage(),
         ),
       );
@@ -241,8 +241,8 @@ class _MainShellState extends State<MainShell> {
   Widget _buildDesktopLayout() {
     final items = _visibleItems;
     final index = _safeIndex(items);
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFF07090F),
       body: Row(
         children: [
           _Sidebar(
@@ -251,6 +251,7 @@ class _MainShellState extends State<MainShell> {
             onTap: _select,
             onLogout: _logout,
             onSearch: () => _abrirBusqueda(desktop: true),
+            colorScheme: cs,
           ),
           Expanded(
             child: items.isEmpty
@@ -270,20 +271,18 @@ class _MainShellState extends State<MainShell> {
     final index = _safeIndex(items);
     final current = items.isNotEmpty ? items[index] : null;
     final quickItems = items.where((item) => item.quickAccess).take(4).toList();
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF07090F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0C111A),
         title: Text(
           current?.title ?? 'EL TATA Manager',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: cs.onSurface,
             fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             onPressed: () => _abrirBusqueda(desktop: false),
@@ -294,13 +293,13 @@ class _MainShellState extends State<MainShell> {
             padding: const EdgeInsets.only(right: 8),
             child: CircleAvatar(
               radius: 16,
-              backgroundColor: const Color(0xFF141A25),
+              backgroundColor: cs.primaryContainer,
               child: Text(
                 (AuthService.instance.currentUser?.nombre ?? 'A')
                     .substring(0, 1)
                     .toUpperCase(),
-                style: const TextStyle(
-                  color: Color(0xFFFF7A00),
+                style: TextStyle(
+                  color: cs.onPrimaryContainer,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -310,7 +309,7 @@ class _MainShellState extends State<MainShell> {
         ],
       ),
       drawer: Drawer(
-        backgroundColor: const Color(0xFF0C111A),
+        backgroundColor: cs.surfaceContainerLow,
         width: 260,
         child: _SidebarContent(
           selectedIndex: index,
@@ -321,6 +320,7 @@ class _MainShellState extends State<MainShell> {
           },
           onLogout: _logout,
           onSearch: () => _abrirBusqueda(desktop: false),
+          colorScheme: cs,
         ),
       ),
       body: items.isEmpty
@@ -332,9 +332,9 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: quickItems.isEmpty
           ? null
           : BottomNavigationBar(
-              backgroundColor: const Color(0xFF0C111A),
-              selectedItemColor: const Color(0xFFFF7A00),
-              unselectedItemColor: Colors.white38,
+              backgroundColor: cs.surfaceContainerLow,
+              selectedItemColor: cs.primary,
+              unselectedItemColor: cs.onSurfaceVariant,
               type: BottomNavigationBarType.fixed,
               currentIndex: quickItems.contains(current) ? quickItems.indexOf(current!) : 0,
               onTap: (i) => _select(items.indexOf(quickItems[i])),
@@ -357,6 +357,7 @@ class _Sidebar extends StatelessWidget {
   final ValueChanged<int> onTap;
   final VoidCallback onLogout;
   final VoidCallback onSearch;
+  final ColorScheme colorScheme;
 
   const _Sidebar({
     required this.selectedIndex,
@@ -364,15 +365,16 @@ class _Sidebar extends StatelessWidget {
     required this.onTap,
     required this.onLogout,
     required this.onSearch,
+    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 230,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0B111C),
-        border: Border(right: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        border: Border(right: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: _SidebarContent(
         selectedIndex: selectedIndex,
@@ -380,6 +382,7 @@ class _Sidebar extends StatelessWidget {
         onTap: onTap,
         onLogout: onLogout,
         onSearch: onSearch,
+        colorScheme: colorScheme,
       ),
     );
   }
@@ -391,6 +394,7 @@ class _SidebarContent extends StatelessWidget {
   final ValueChanged<int> onTap;
   final VoidCallback onLogout;
   final VoidCallback onSearch;
+  final ColorScheme colorScheme;
 
   const _SidebarContent({
     required this.selectedIndex,
@@ -398,20 +402,22 @@ class _SidebarContent extends StatelessWidget {
     required this.onTap,
     required this.onLogout,
     required this.onSearch,
+    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
     final branding = BrandingService.instance;
     final logoPath = branding.logoPath;
+    final cs = colorScheme;
 
     return Column(
       children: [
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.white10)),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: cs.outlineVariant)),
           ),
           child: Column(
             children: [
@@ -427,21 +433,21 @@ class _SidebarContent extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFFFF7A00),
+                      color: cs.primary,
                       width: 1.5,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.store_rounded,
-                    color: Color(0xFFFF7A00),
+                    color: cs.primary,
                     size: 28,
                   ),
                 ),
               const SizedBox(height: 8),
               Text(
                 branding.nombre,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: cs.onSurface,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -451,7 +457,7 @@ class _SidebarContent extends StatelessWidget {
               if (branding.slogan.isNotEmpty)
                 Text(
                   branding.slogan,
-                  style: const TextStyle(color: Colors.white38, fontSize: 11),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -475,20 +481,20 @@ class _SidebarContent extends StatelessWidget {
               return Container(
                 margin: const EdgeInsets.symmetric(vertical: 2),
                 decoration: BoxDecoration(
-                  color: selected ? const Color(0xFFFF7A00) : Colors.transparent,
+                  color: selected ? cs.primaryContainer : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: ListTile(
                   dense: true,
                   leading: Icon(
                     item.icon,
-                    color: selected ? Colors.white : Colors.white60,
+                    color: selected ? cs.primary : cs.onSurfaceVariant,
                     size: 20,
                   ),
                   title: Text(
                     item.title,
                     style: TextStyle(
-                      color: selected ? Colors.white : Colors.white70,
+                      color: selected ? cs.onPrimaryContainer : cs.onSurface,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
                       fontSize: 14,
                     ),
@@ -503,20 +509,20 @@ class _SidebarContent extends StatelessWidget {
           margin: const EdgeInsets.all(10),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF111827),
+            color: cs.surfaceContainerLow,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor: const Color(0xFF1F2937),
+                backgroundColor: cs.primaryContainer,
                 child: Text(
                   (AuthService.instance.currentUser?.nombre ?? 'A')
                       .substring(0, 1)
                       .toUpperCase(),
-                  style: const TextStyle(
-                    color: Color(0xFFFF7A00),
+                  style: TextStyle(
+                    color: cs.onPrimaryContainer,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -530,8 +536,8 @@ class _SidebarContent extends StatelessWidget {
                   children: [
                     Text(
                       AuthService.instance.currentUser?.nombre ?? 'Usuario',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: cs.onSurface,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -539,15 +545,15 @@ class _SidebarContent extends StatelessWidget {
                     ),
                     Text(
                       AuthService.instance.currentUser?.rol ?? '',
-                      style: const TextStyle(color: Colors.white38, fontSize: 11),
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                     ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.logout_rounded,
-                  color: Colors.white38,
+                  color: cs.onSurfaceVariant,
                   size: 20,
                 ),
                 tooltip: 'Cerrar sesión',

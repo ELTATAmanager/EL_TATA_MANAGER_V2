@@ -55,9 +55,10 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final branding = BrandingService.instance;
     final logoPath = branding.logoPath;
+    final cs = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF07090F),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
@@ -79,24 +80,22 @@ class _LoginPageState extends State<LoginPage> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFFFF7A00),
+                        color: cs.primary,
                         width: 1.5,
                       ),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Icon(
                         Icons.store_rounded,
                         size: 48,
-                        color: Color(0xFFFF7A00),
+                        color: cs.primary,
                       ),
                     ),
                   ),
                 const SizedBox(height: 16),
                 Text(
                   branding.nombre,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
+                  style: textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -104,123 +103,105 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 4),
                   Text(
                     branding.slogan,
-                    style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 13,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ],
                 const SizedBox(height: 40),
                 // Login card
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0C111A),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Iniciar sesión',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _usuarioCtrl,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _inputDecoration(
-                          'Usuario',
-                          Icons.person_outline_rounded,
-                        ),
-                        textInputAction: TextInputAction.next,
-                        onSubmitted: (_) =>
-                            FocusScope.of(context).nextFocus(),
-                      ),
-                      const SizedBox(height: 14),
-                      TextField(
-                        controller: _passwordCtrl,
-                        obscureText: _obscure,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _inputDecoration(
-                          'Contraseña',
-                          Icons.lock_outline_rounded,
-                        ).copyWith(
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: Colors.white54,
-                            ),
-                            onPressed: () =>
-                                setState(() => _obscure = !_obscure),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Iniciar sesión',
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _loading ? null : _login(),
-                      ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Color(0xFFEF4444),
-                              size: 16,
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _usuarioCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Usuario',
+                            prefixIcon: const Icon(Icons.person_outline_rounded),
+                          ),
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) =>
+                              FocusScope.of(context).nextFocus(),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _passwordCtrl,
+                          obscureText: _obscure,
+                          decoration: InputDecoration(
+                            labelText: 'Contraseña',
+                            prefixIcon: const Icon(Icons.lock_outline_rounded),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscure
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                _error!,
-                                style: const TextStyle(
-                                  color: Color(0xFFEF4444),
-                                  fontSize: 13,
+                          ),
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _loading ? null : _login(),
+                        ),
+                        if (_error != null) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: cs.error,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _error!,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: cs.error,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _login,
+                            child: _loading
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: cs.onPrimary,
+                                    ),
+                                  )
+                                : const Text(
+                                    'ENTRAR',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                          ),
                         ),
                       ],
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF7A00),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          onPressed: _loading ? null : _login,
-                          child: _loading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  'ENTRAR',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -231,25 +212,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: Colors.white60),
-      prefixIcon: Icon(icon, color: Colors.white38),
-      filled: true,
-      fillColor: const Color(0xFF141A25),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.white12),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.white12),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFFF7A00)),
-      ),
-    );
-  }
 }

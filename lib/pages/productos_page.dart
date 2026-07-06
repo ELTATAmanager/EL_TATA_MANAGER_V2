@@ -169,8 +169,6 @@ class _ProductosPageState extends State<ProductosPage> {
         onPressed: _nuevoProducto,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Nuevo'),
-        backgroundColor: const Color(0xFFFF7A00),
-        foregroundColor: Colors.white,
       ),
       body: cargando
           ? const Center(child: CircularProgressIndicator())
