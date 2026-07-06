@@ -78,7 +78,7 @@ class ProveedorService {
     return Sqflite.firstIntValue(resultado) ?? 0;
   }
 
-  Future<void> cargarIniciales() async {
+  Future<void> cargarProveedoresIniciales() async {
     if (await cantidad() > 0) {
       return;
     }
