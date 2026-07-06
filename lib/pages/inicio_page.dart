@@ -64,9 +64,10 @@ class _InicioPageState extends State<InicioPage> {
 
     switch (index) {
       case 0:
+        // Inicio ya se muestra en el workspace principal.
         break;
       case 1:
-        _abrirPagina(const ProductosPage());
+        // Productos se mantiene dentro del layout de Inicio para no perder sidebar.
         break;
       case 2:
         _abrirPagina(const ProveedoresPage());
