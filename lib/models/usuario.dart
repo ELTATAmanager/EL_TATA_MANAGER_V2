@@ -5,14 +5,18 @@ class Usuario {
   String password;
   String rol;
   bool activo;
+  DateTime? fechaCreacion;
+  DateTime? ultimoAcceso;
 
   Usuario({
     this.id,
     required this.nombre,
     required this.usuario,
     required this.password,
-    this.rol = 'usuario',
+    this.rol = 'empleado',
     this.activo = true,
+    this.fechaCreacion,
+    this.ultimoAcceso,
   });
 
   factory Usuario.fromMap(Map<String, dynamic> map) {
@@ -21,8 +25,14 @@ class Usuario {
       nombre: map['nombre'] ?? '',
       usuario: map['usuario'] ?? '',
       password: map['password'] ?? '',
-      rol: map['rol'] ?? 'usuario',
+      rol: map['rol'] ?? 'empleado',
       activo: (map['activo'] ?? 1) == 1,
+      fechaCreacion: map['fechaCreacion'] != null
+          ? DateTime.tryParse(map['fechaCreacion'].toString())
+          : null,
+      ultimoAcceso: map['ultimoAcceso'] != null
+          ? DateTime.tryParse(map['ultimoAcceso'].toString())
+          : null,
     );
   }
 
@@ -34,6 +44,30 @@ class Usuario {
       'password': password,
       'rol': rol,
       'activo': activo ? 1 : 0,
+      'fechaCreacion': fechaCreacion?.toIso8601String(),
+      'ultimoAcceso': ultimoAcceso?.toIso8601String(),
     };
+  }
+
+  Usuario copyWith({
+    int? id,
+    String? nombre,
+    String? usuario,
+    String? password,
+    String? rol,
+    bool? activo,
+    DateTime? fechaCreacion,
+    DateTime? ultimoAcceso,
+  }) {
+    return Usuario(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      usuario: usuario ?? this.usuario,
+      password: password ?? this.password,
+      rol: rol ?? this.rol,
+      activo: activo ?? this.activo,
+      fechaCreacion: fechaCreacion ?? this.fechaCreacion,
+      ultimoAcceso: ultimoAcceso ?? this.ultimoAcceso,
+    );
   }
 }

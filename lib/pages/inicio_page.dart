@@ -724,7 +724,7 @@ class _DesktopWorkspace extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.all(8),
                       child: DataTable(

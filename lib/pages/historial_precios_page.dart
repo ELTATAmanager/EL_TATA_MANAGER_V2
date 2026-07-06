@@ -43,8 +43,6 @@ class _HistorialPreciosPageState extends State<HistorialPreciosPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Historial - ${widget.productoDescripcion}'),

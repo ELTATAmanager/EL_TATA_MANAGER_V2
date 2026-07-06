@@ -85,7 +85,7 @@ class CsvService {
     List<String> headers,
     List<List<dynamic>> filas,
   ) async {
-    final csv = const ListToCsvConverter(fieldDelimiter: ';').convert([
+    final csv = const CsvEncoder(fieldDelimiter: ';').convert([
       headers,
       ...filas,
     ]);

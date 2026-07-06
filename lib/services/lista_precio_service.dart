@@ -32,7 +32,7 @@ class ListaPrecioService {
     final db = await dbHelper.database;
     final resultado = await db.query(
       'listas_precios',
-      orderBy: 'orden ASC, nombre',
+      orderBy: 'prioridad DESC, orden ASC, nombre',
     );
     return resultado.map((e) => ListaPrecio.fromMap(e)).toList();
   }
@@ -42,7 +42,7 @@ class ListaPrecioService {
     final resultado = await db.query(
       'listas_precios',
       where: 'activa = 1',
-      orderBy: 'orden ASC, nombre',
+      orderBy: 'prioridad DESC, orden ASC, nombre',
     );
     return resultado.map((e) => ListaPrecio.fromMap(e)).toList();
   }

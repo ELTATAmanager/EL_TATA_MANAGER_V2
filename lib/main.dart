@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'pages/login_page.dart';
 import 'services/branding_service.dart';
+import 'services/permisos_service.dart';
 import 'theme/theme_provider.dart';
 
 void main() async {
@@ -22,6 +23,7 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
   }
 
+  await PermisosService.instance.cargar();
   runApp(const ElTataApp());
 }
 
@@ -63,4 +65,3 @@ class _ElTataAppState extends State<ElTataApp> {
     );
   }
 }
-

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../models/lista_precio.dart';
 import '../models/producto.dart';
-import '../services/auth_service.dart';
 import '../services/lista_precio_service.dart';
 import '../services/producto_service.dart';
 import '../theme/app_visuals.dart';
@@ -20,13 +19,14 @@ class _ProductosPageState extends State<ProductosPage> {
   static const int _stockNivelAlto = 10;
 
   final ProductoService service = ProductoService();
+  final ListaPrecioService listaPrecioService = ListaPrecioService();
   final TextEditingController buscarController = TextEditingController();
 
   List<Producto> productos = [];
   List<Producto> filtrados = [];
+  List<ListaPrecio> listasActivas = [];
   bool cargando = true;
 
-  // Filters
   String _filtroBusqueda = '';
   String? _filtroMarca;
   String? _filtroProveedor;
@@ -34,7 +34,6 @@ class _ProductosPageState extends State<ProductosPage> {
   List<String> _marcas = [];
   List<String> _proveedores = [];
 
-  // KPI values
   int get _totalProductos => productos.length;
   int get _stockTotal => productos.fold(0, (s, p) => s + p.stock);
   double get _valorStock => productos.fold(0, (s, p) => s + p.precio * p.stock);
@@ -56,13 +55,14 @@ class _ProductosPageState extends State<ProductosPage> {
     setState(() => cargando = true);
     productos = await service.obtenerTodos();
     listasActivas = await listaPrecioService.obtenerActivas();
-
-    // Build filter options
     _marcas = productos.map((p) => p.marca).where((m) => m.isNotEmpty).toSet().toList()
       ..sort();
-    _proveedores =
-        productos.map((p) => p.proveedor).where((v) => v.isNotEmpty).toSet().toList()
-          ..sort();
+    _proveedores = productos
+        .map((p) => p.proveedor)
+        .where((v) => v.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
 
     _aplicarFiltros();
 
@@ -81,8 +81,7 @@ class _ProductosPageState extends State<ProductosPage> {
           p.proveedor.toLowerCase().contains(query);
 
       final matchMarca = _filtroMarca == null || p.marca == _filtroMarca;
-      final matchProveedor =
-          _filtroProveedor == null || p.proveedor == _filtroProveedor;
+      final matchProveedor = _filtroProveedor == null || p.proveedor == _filtroProveedor;
 
       return matchBusqueda && matchMarca && matchProveedor;
     }).toList();
@@ -117,18 +116,13 @@ class _ProductosPageState extends State<ProductosPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar',
-                style: TextStyle(color: Colors.red)),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
     if (confirm != true) return;
     await service.eliminar(producto.id!);
-    await AuthService.instance.registrarAccion(
-      'ELIMINAR_PRODUCTO',
-      'Código: ${producto.codigo} - ${producto.descripcion}',
-    );
     await cargarProductos();
   }
 
@@ -183,7 +177,6 @@ class _ProductosPageState extends State<ProductosPage> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── KPI row ──────────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                   child: LayoutBuilder(
@@ -240,11 +233,8 @@ class _ProductosPageState extends State<ProductosPage> {
                     },
                   ),
                 ),
-
-                // ── Search + filter bar ───────────────────────────────────
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: Row(
                     children: [
                       Expanded(
@@ -270,8 +260,7 @@ class _ProductosPageState extends State<ProductosPage> {
                                     onPressed: _limpiarFiltros,
                                   )
                                 : IconButton(
-                                    icon: const Icon(
-                                        Icons.qr_code_scanner_rounded),
+                                    icon: const Icon(Icons.qr_code_scanner_rounded),
                                     tooltip: 'Escanear código',
                                     onPressed: _escanearCodigo,
                                   ),
@@ -315,20 +304,13 @@ class _ProductosPageState extends State<ProductosPage> {
                     ],
                   ),
                 ),
-
-                // ── Results count ─────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                   child: Text(
                     '${filtrados.length} producto${filtrados.length != 1 ? 's' : ''}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                   ),
                 ),
-
-                // ── Product list ──────────────────────────────────────────
                 Expanded(
                   child: filtrados.isEmpty
                       ? Center(
@@ -343,8 +325,7 @@ class _ProductosPageState extends State<ProductosPage> {
                               const SizedBox(height: 12),
                               Text(
                                 'Sin resultados',
-                                style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant),
+                                style: TextStyle(color: colorScheme.onSurfaceVariant),
                               ),
                             ],
                           ),
@@ -387,9 +368,10 @@ class _ProductosPageState extends State<ProductosPage> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(title,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 16)),
+            child: Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ),
           ListTile(
             title: const Text('Todos'),
@@ -409,9 +391,7 @@ class _ProductosPageState extends State<ProductosPage> {
                     (item) => ListTile(
                       title: Text(item),
                       selected: selected == item,
-                      trailing: selected == item
-                          ? const Icon(Icons.check_rounded)
-                          : null,
+                      trailing: selected == item ? const Icon(Icons.check_rounded) : null,
                       onTap: () {
                         onSelect(item);
                         Navigator.pop(context);
@@ -433,8 +413,6 @@ class _ProductosPageState extends State<ProductosPage> {
     return v.toStringAsFixed(0);
   }
 }
-
-// ── Sub-widgets ──────────────────────────────────────────────────────────────
 
 class _KpiCard extends StatelessWidget {
   final String title;
@@ -516,19 +494,18 @@ class _FilterChipButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: active
-              ? cs.primaryContainer
-              : cs.surfaceContainerHighest,
+          color: active ? cs.primaryContainer : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: active ? cs.primary : cs.outlineVariant,
-          ),
+          border: Border.all(color: active ? cs.primary : cs.outlineVariant),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16,
-                color: active ? cs.primary : cs.onSurfaceVariant),
+            Icon(
+              icon,
+              size: 16,
+              color: active ? cs.primary : cs.onSurfaceVariant,
+            ),
             const SizedBox(width: 4),
             Text(
               label,
@@ -577,33 +554,24 @@ class _ProductoCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Main info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         p.descripcion,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Cód: ${p.codigo}  •  ${p.marca}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ),
                 ),
-                // Stock badge
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: stockColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
@@ -620,7 +588,6 @@ class _ProductoCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            // Prices row
             Wrap(
               spacing: 8,
               runSpacing: 4,
@@ -639,7 +606,6 @@ class _ProductoCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            // Actions
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -693,13 +659,8 @@ class _PriceBadge extends StatelessWidget {
       ),
       child: Text(
         '$label: \$${value.toStringAsFixed(2)}',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: cs.onSurface,
-        ),
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurface),
       ),
     );
   }
 }
-

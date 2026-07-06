@@ -18,8 +18,6 @@ class CompraService {
     return 'C-${(maxN + 1).toString().padLeft(5, '0')}';
   }
 
-  /// Inserts a purchase along with its items, updates product stock and cost,
-  /// and records a price-history entry whenever the cost changes.
   Future<int> insertar(Compra compra, List<CompraDetalle> items) async {
     final db = await dbHelper.database;
 
@@ -28,8 +26,11 @@ class CompraService {
         'proveedorId': compra.proveedorId,
         'proveedorNombre': compra.proveedorNombre,
         'numero': compra.numero,
+        'factura': compra.factura,
         'fecha': compra.fecha.toIso8601String(),
         'total': compra.total,
+        'descuento': compra.descuento,
+        'iva': compra.iva,
         'observaciones': compra.observaciones,
         'fechaCreacion': DateTime.now().toIso8601String(),
         'estado': compra.estado,
@@ -47,7 +48,7 @@ class CompraService {
 
         final productoRows = await txn.query(
           'productos',
-          columns: ['costo'],
+          columns: ['costo', 'precio', 'stock'],
           where: 'id = ?',
           whereArgs: [item.productoId],
           limit: 1,
@@ -56,6 +57,15 @@ class CompraService {
             (productoRows.isNotEmpty ? productoRows.first['costo'] as num? : 0)
                     ?.toDouble() ??
                 0;
+        final precioAnterior =
+            (productoRows.isNotEmpty ? productoRows.first['precio'] as num? : 0)
+                    ?.toDouble() ??
+                0;
+        final stockAnterior =
+            (productoRows.isNotEmpty ? productoRows.first['stock'] as num? : 0)
+                    ?.toInt() ??
+                0;
+        final stockNuevo = stockAnterior + item.cantidad;
 
         await txn.rawUpdate(
           'UPDATE productos SET stock = stock + ?, costo = ? WHERE id = ?',
@@ -63,12 +73,19 @@ class CompraService {
         );
 
         if (costoAnterior != item.costo) {
+          final variacion = costoAnterior > 0
+              ? ((item.costo - costoAnterior) / costoAnterior) * 100
+              : 0.0;
           await txn.insert('historial_precios', {
             'productoId': item.productoId,
             'fecha': DateTime.now().toIso8601String(),
             'usuario': AuthService.instance.currentUser?.usuario ?? 'sistema',
             'costoAnterior': costoAnterior,
             'costoNuevo': item.costo,
+            'precioAnterior': precioAnterior,
+            'precioNuevo': precioAnterior,
+            'porcentaje': variacion,
+            'listaModificada': 'Costo',
             'motivo': 'Compra ${compra.numero}',
           });
         }
@@ -80,6 +97,9 @@ class CompraService {
           fecha: DateTime.now(),
           remitoId: compraId.toString(),
           motivo: 'Entrada por compra ${compra.numero}',
+          usuario: AuthService.instance.currentUser?.usuario ?? 'sistema',
+          stockAnterior: stockAnterior,
+          stockNuevo: stockNuevo,
         );
 
         await txn.insert(
@@ -136,6 +156,18 @@ class CompraService {
       for (final item in items) {
         final productoId = item['productoId'] as int;
         final cantidad = item['cantidad'] as int? ?? 0;
+        final productoRows = await txn.query(
+          'productos',
+          columns: ['stock'],
+          where: 'id = ?',
+          whereArgs: [productoId],
+          limit: 1,
+        );
+        final stockAnterior =
+            (productoRows.isNotEmpty ? productoRows.first['stock'] as num? : 0)
+                    ?.toInt() ??
+                0;
+        final stockNuevo = stockAnterior - cantidad;
 
         await txn.rawUpdate(
           'UPDATE productos SET stock = stock - ? WHERE id = ?',
@@ -149,6 +181,9 @@ class CompraService {
           fecha: DateTime.now(),
           remitoId: id.toString(),
           motivo: 'Reversión de compra ${compra['numero']}',
+          usuario: AuthService.instance.currentUser?.usuario ?? 'sistema',
+          stockAnterior: stockAnterior,
+          stockNuevo: stockNuevo,
         );
 
         await txn.insert(
@@ -178,5 +213,26 @@ class CompraService {
       "SELECT SUM(total) total FROM compras WHERE estado != 'anulada'",
     );
     return (r.first['total'] as num?)?.toDouble() ?? 0;
+  }
+
+  Future<double> totalComprasPorPeriodo(DateTime desde, DateTime hasta) async {
+    final db = await dbHelper.database;
+    final r = await db.rawQuery(
+      "SELECT SUM(total) total FROM compras WHERE estado != 'anulada' AND fecha >= ? AND fecha <= ?",
+      [desde.toIso8601String(), hasta.toIso8601String()],
+    );
+    return (r.first['total'] as num?)?.toDouble() ?? 0;
+  }
+
+  Future<List<Map<String, dynamic>>> comprasPorMes({int meses = 6}) async {
+    final db = await dbHelper.database;
+    return db.rawQuery('''
+      SELECT strftime('%Y-%m', fecha) AS mes, SUM(total) AS total
+      FROM compras
+      WHERE estado != 'anulada'
+      AND fecha >= date('now', '-$meses months')
+      GROUP BY strftime('%Y-%m', fecha)
+      ORDER BY mes ASC
+    ''');
   }
 }

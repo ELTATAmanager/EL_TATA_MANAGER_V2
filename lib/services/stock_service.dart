@@ -1,6 +1,7 @@
 import '../database/database_helper.dart';
 import '../models/movimiento_stock.dart';
 import '../models/producto.dart';
+import 'auth_service.dart';
 
 class StockService {
   final DatabaseHelper dbHelper = DatabaseHelper.instance;
@@ -23,12 +24,32 @@ class StockService {
     final db = await dbHelper.database;
 
     return db.transaction((txn) async {
-      final movimientoId = await txn.insert(
-        'movimientos_stock',
-        movimiento.toMap()..remove('id'),
+      final productoRows = await txn.query(
+        'productos',
+        columns: ['stock'],
+        where: 'id = ?',
+        whereArgs: [movimiento.productoId],
+        limit: 1,
+      );
+      final stockAnterior =
+          (productoRows.isNotEmpty ? productoRows.first['stock'] as num? : 0)
+                  ?.toInt() ??
+              0;
+      final multiplicador = movimiento.tipo == 'salida' ? -1 : 1;
+      final stockNuevo = stockAnterior + (movimiento.cantidad * multiplicador);
+      final movimientoCompleto = movimiento.copyWith(
+        usuario: movimiento.usuario.isNotEmpty
+            ? movimiento.usuario
+            : (AuthService.instance.currentUser?.usuario ?? 'sistema'),
+        stockAnterior: stockAnterior,
+        stockNuevo: stockNuevo,
       );
 
-      final multiplicador = movimiento.tipo == 'salida' ? -1 : 1;
+      final movimientoId = await txn.insert(
+        'movimientos_stock',
+        movimientoCompleto.toMap()..remove('id'),
+      );
+
       await txn.rawUpdate(
         'UPDATE productos SET stock = stock + ? WHERE id = ?',
         [movimiento.cantidad * multiplicador, movimiento.productoId],

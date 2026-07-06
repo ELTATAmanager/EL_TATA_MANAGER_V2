@@ -4,21 +4,42 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../services/branding_service.dart';
+import '../services/permisos_service.dart';
 import 'auditoria_page.dart';
 import 'backup_page.dart';
+import 'busqueda_global_page.dart';
 import 'clientes_page.dart';
 import 'comparacion_page.dart';
 import 'compras_page.dart';
 import 'configuracion_page.dart';
 import 'dashboard_page.dart';
 import 'etiquetas_page.dart';
+import 'inteligencia_comercial_page.dart';
 import 'listas_precio_page.dart';
 import 'login_page.dart';
+import 'permisos_page.dart';
 import 'productos_page.dart';
 import 'proveedores_page.dart';
 import 'remitos_page.dart';
 import 'reportes_page.dart';
 import 'stock_page.dart';
+import 'usuarios_page.dart';
+
+class _ShellItem {
+  final IconData icon;
+  final String title;
+  final String modulo;
+  final Widget Function() builder;
+  final bool quickAccess;
+
+  const _ShellItem({
+    required this.icon,
+    required this.title,
+    required this.modulo,
+    required this.builder,
+    this.quickAccess = false,
+  });
+}
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -30,61 +51,130 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
-  static const _titles = [
-    'Dashboard',
-    'Productos',
-    'Comparador de listas',
-    'Stock',
-    'Compras',
-    'Remitos',
-    'Clientes',
-    'Proveedores',
-    'Listas de Precios',
-    'Reportes',
-    'Etiquetas',
-    'Auditoría',
-    'Respaldo',
-    'Configuración',
-  ];
+  List<_ShellItem> get _items => [
+        _ShellItem(
+          icon: Icons.query_stats_rounded,
+          title: 'Dashboard',
+          modulo: 'dashboard',
+          builder: () => const DashboardPage(),
+          quickAccess: true,
+        ),
+        _ShellItem(
+          icon: Icons.inventory_2_rounded,
+          title: 'Productos',
+          modulo: 'productos',
+          builder: () => const ProductosPage(),
+          quickAccess: true,
+        ),
+        _ShellItem(
+          icon: Icons.compare_arrows_rounded,
+          title: 'Comparador de listas',
+          modulo: 'listas_precios',
+          builder: () => const ComparacionPage(),
+        ),
+        _ShellItem(
+          icon: Icons.warehouse_rounded,
+          title: 'Stock',
+          modulo: 'stock',
+          builder: () => const StockPage(),
+        ),
+        _ShellItem(
+          icon: Icons.shopping_cart_rounded,
+          title: 'Compras',
+          modulo: 'compras',
+          builder: () => const ComprasPage(),
+        ),
+        _ShellItem(
+          icon: Icons.description_rounded,
+          title: 'Remitos',
+          modulo: 'remitos',
+          builder: () => const RemitosPage(),
+          quickAccess: true,
+        ),
+        _ShellItem(
+          icon: Icons.groups_rounded,
+          title: 'Clientes',
+          modulo: 'clientes',
+          builder: () => const ClientesPage(),
+          quickAccess: true,
+        ),
+        _ShellItem(
+          icon: Icons.local_shipping_rounded,
+          title: 'Proveedores',
+          modulo: 'proveedores',
+          builder: () => const ProveedoresPage(),
+        ),
+        _ShellItem(
+          icon: Icons.sell_rounded,
+          title: 'Listas de Precios',
+          modulo: 'listas_precios',
+          builder: () => const ListasPrecioPage(),
+        ),
+        _ShellItem(
+          icon: Icons.bar_chart_rounded,
+          title: 'Reportes',
+          modulo: 'reportes',
+          builder: () => const ReportesPage(),
+        ),
+        _ShellItem(
+          icon: Icons.insights_rounded,
+          title: 'Inteligencia Comercial',
+          modulo: 'reportes',
+          builder: () => const InteligenciaComercialPage(),
+        ),
+        _ShellItem(
+          icon: Icons.label_rounded,
+          title: 'Etiquetas',
+          modulo: 'etiquetas',
+          builder: () => const EtiquetasPage(),
+        ),
+        _ShellItem(
+          icon: Icons.history_edu_rounded,
+          title: 'Auditoría',
+          modulo: 'auditoria',
+          builder: () => const AuditoriaPage(),
+        ),
+        _ShellItem(
+          icon: Icons.people_alt_rounded,
+          title: 'Usuarios',
+          modulo: 'usuarios',
+          builder: () => const UsuariosPage(),
+        ),
+        _ShellItem(
+          icon: Icons.admin_panel_settings_rounded,
+          title: 'Permisos',
+          modulo: 'usuarios',
+          builder: () => const PermisosPage(),
+        ),
+        _ShellItem(
+          icon: Icons.cloud_upload_rounded,
+          title: 'Respaldo',
+          modulo: 'backup',
+          builder: () => const BackupPage(),
+        ),
+        _ShellItem(
+          icon: Icons.settings_rounded,
+          title: 'Configuración',
+          modulo: 'configuracion',
+          builder: () => const ConfiguracionPage(),
+        ),
+      ];
 
-  static const _items = [
-    (Icons.query_stats_rounded, 'Dashboard'),
-    (Icons.inventory_2_rounded, 'Productos'),
-    (Icons.compare_arrows_rounded, 'Comparador de listas'),
-    (Icons.warehouse_rounded, 'Stock'),
-    (Icons.shopping_cart_rounded, 'Compras'),
-    (Icons.description_rounded, 'Remitos'),
-    (Icons.groups_rounded, 'Clientes'),
-    (Icons.local_shipping_rounded, 'Proveedores'),
-    (Icons.sell_rounded, 'Listas de Precios'),
-    (Icons.bar_chart_rounded, 'Reportes'),
-    (Icons.label_rounded, 'Etiquetas'),
-    (Icons.history_edu_rounded, 'Auditoría'),
-    (Icons.cloud_upload_rounded, 'Respaldo'),
-    (Icons.settings_rounded, 'Configuración'),
-  ];
+  List<_ShellItem> get _visibleItems {
+    final rol = AuthService.instance.currentUser?.rol ?? 'empleado';
+    return _items
+        .where((item) => PermisosService.instance.puedeVer(rol, item.modulo))
+        .toList();
+  }
 
-  late final List<Widget> _pages = [
-    const DashboardPage(),
-    const ProductosPage(),
-    const ComparacionPage(),
-    const StockPage(),
-    const ComprasPage(),
-    const RemitosPage(),
-    const ClientesPage(),
-    const ProveedoresPage(),
-    const ListasPrecioPage(),
-    const ReportesPage(),
-    const EtiquetasPage(),
-    const AuditoriaPage(),
-    const BackupPage(),
-    const ConfiguracionPage(),
-  ];
+  int _safeIndex(List<_ShellItem> items) {
+    if (items.isEmpty) return 0;
+    if (_selectedIndex >= items.length) return 0;
+    return _selectedIndex;
+  }
 
   void _select(int index) {
-    if (_selectedIndex != index) {
-      setState(() => _selectedIndex = index);
-    }
+    if (_selectedIndex != index) setState(() => _selectedIndex = index);
   }
 
   Future<void> _logout() async {
@@ -96,37 +186,57 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
+  Future<void> _abrirBusqueda({required bool desktop}) async {
+    if (desktop) {
+      await showDialog<void>(
+        context: context,
+        builder: (_) => Dialog.fullscreen(
+          backgroundColor: const Color(0xFF07090F),
+          child: const BusquedaGlobalPage(),
+        ),
+      );
+    } else {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const BusquedaGlobalPage()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final desktop = constraints.maxWidth >= 800;
-
         if (desktop) {
           return _buildDesktopLayout();
-        } else {
-          return _buildMobileLayout();
         }
+        return _buildMobileLayout();
       },
     );
   }
 
   Widget _buildDesktopLayout() {
+    final items = _visibleItems;
+    final index = _safeIndex(items);
     return Scaffold(
       backgroundColor: const Color(0xFF07090F),
       body: Row(
         children: [
           _Sidebar(
-            selectedIndex: _selectedIndex,
-            items: _items,
+            selectedIndex: index,
+            items: items,
             onTap: _select,
             onLogout: _logout,
+            onSearch: () => _abrirBusqueda(desktop: true),
           ),
           Expanded(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: _pages,
-            ),
+            child: items.isEmpty
+                ? const Center(child: Text('Sin módulos disponibles'))
+                : IndexedStack(
+                    index: index,
+                    children: [for (final item in items) item.builder()],
+                  ),
           ),
         ],
       ),
@@ -134,12 +244,17 @@ class _MainShellState extends State<MainShell> {
   }
 
   Widget _buildMobileLayout() {
+    final items = _visibleItems;
+    final index = _safeIndex(items);
+    final current = items.isNotEmpty ? items[index] : null;
+    final quickItems = items.where((item) => item.quickAccess).take(4).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFF07090F),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0C111A),
         title: Text(
-          _titles[_selectedIndex],
+          current?.title ?? 'EL TATA Manager',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
@@ -148,6 +263,11 @@ class _MainShellState extends State<MainShell> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
+          IconButton(
+            onPressed: () => _abrirBusqueda(desktop: false),
+            icon: const Icon(Icons.search_rounded),
+            tooltip: 'Búsqueda global',
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: CircleAvatar(
@@ -171,69 +291,57 @@ class _MainShellState extends State<MainShell> {
         backgroundColor: const Color(0xFF0C111A),
         width: 260,
         child: _SidebarContent(
-          selectedIndex: _selectedIndex,
-          items: _items,
+          selectedIndex: index,
+          items: items,
           onTap: (i) {
-            Navigator.of(context).pop(); // close drawer
+            Navigator.of(context).pop();
             _select(i);
           },
           onLogout: _logout,
+          onSearch: () => _abrirBusqueda(desktop: false),
         ),
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
-      bottomNavigationBar: _buildBottomBar(),
-    );
-  }
-
-  Widget _buildBottomBar() {
-    const quickItems = [0, 1, 5, 6]; // Dashboard, Productos, Remitos, Clientes
-    return BottomNavigationBar(
-      backgroundColor: const Color(0xFF0C111A),
-      selectedItemColor: const Color(0xFFFF7A00),
-      unselectedItemColor: Colors.white38,
-      type: BottomNavigationBarType.fixed,
-      currentIndex: quickItems.contains(_selectedIndex)
-          ? quickItems.indexOf(_selectedIndex)
-          : 0,
-      onTap: (i) => _select(quickItems[i]),
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.query_stats_rounded),
-          label: 'Dashboard',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.inventory_2_rounded),
-          label: 'Productos',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.description_rounded),
-          label: 'Remitos',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.groups_rounded),
-          label: 'Clientes',
-        ),
-      ],
+      body: items.isEmpty
+          ? const Center(child: Text('Sin módulos disponibles'))
+          : IndexedStack(
+              index: index,
+              children: [for (final item in items) item.builder()],
+            ),
+      bottomNavigationBar: quickItems.isEmpty
+          ? null
+          : BottomNavigationBar(
+              backgroundColor: const Color(0xFF0C111A),
+              selectedItemColor: const Color(0xFFFF7A00),
+              unselectedItemColor: Colors.white38,
+              type: BottomNavigationBarType.fixed,
+              currentIndex: quickItems.contains(current) ? quickItems.indexOf(current!) : 0,
+              onTap: (i) => _select(items.indexOf(quickItems[i])),
+              items: quickItems
+                  .map(
+                    (item) => BottomNavigationBarItem(
+                      icon: Icon(item.icon),
+                      label: item.title,
+                    ),
+                  )
+                  .toList(),
+            ),
     );
   }
 }
 
-// ── Sidebar widgets ──────────────────────────────────────────────────────────
-
 class _Sidebar extends StatelessWidget {
   final int selectedIndex;
-  final List<(IconData, String)> items;
+  final List<_ShellItem> items;
   final ValueChanged<int> onTap;
   final VoidCallback onLogout;
+  final VoidCallback onSearch;
 
   const _Sidebar({
     required this.selectedIndex,
     required this.items,
     required this.onTap,
     required this.onLogout,
+    required this.onSearch,
   });
 
   @override
@@ -249,6 +357,7 @@ class _Sidebar extends StatelessWidget {
         items: items,
         onTap: onTap,
         onLogout: onLogout,
+        onSearch: onSearch,
       ),
     );
   }
@@ -256,15 +365,17 @@ class _Sidebar extends StatelessWidget {
 
 class _SidebarContent extends StatelessWidget {
   final int selectedIndex;
-  final List<(IconData, String)> items;
+  final List<_ShellItem> items;
   final ValueChanged<int> onTap;
   final VoidCallback onLogout;
+  final VoidCallback onSearch;
 
   const _SidebarContent({
     required this.selectedIndex,
     required this.items,
     required this.onTap,
     required this.onLogout,
+    required this.onSearch,
   });
 
   @override
@@ -274,7 +385,6 @@ class _SidebarContent extends StatelessWidget {
 
     return Column(
       children: [
-        // Header / logo
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
@@ -324,10 +434,15 @@ class _SidebarContent extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: onSearch,
+                icon: const Icon(Icons.search_rounded),
+                label: const Text('Búsqueda global'),
+              ),
             ],
           ),
         ),
-        // Nav items
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -338,25 +453,21 @@ class _SidebarContent extends StatelessWidget {
               return Container(
                 margin: const EdgeInsets.symmetric(vertical: 2),
                 decoration: BoxDecoration(
-                  color: selected
-                      ? const Color(0xFFFF7A00)
-                      : Colors.transparent,
+                  color: selected ? const Color(0xFFFF7A00) : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: ListTile(
                   dense: true,
                   leading: Icon(
-                    item.$1,
+                    item.icon,
                     color: selected ? Colors.white : Colors.white60,
                     size: 20,
                   ),
                   title: Text(
-                    item.$2,
+                    item.title,
                     style: TextStyle(
                       color: selected ? Colors.white : Colors.white70,
-                      fontWeight: selected
-                          ? FontWeight.w700
-                          : FontWeight.normal,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
                       fontSize: 14,
                     ),
                   ),
@@ -366,7 +477,6 @@ class _SidebarContent extends StatelessWidget {
             },
           ),
         ),
-        // User + logout
         Container(
           margin: const EdgeInsets.all(10),
           padding: const EdgeInsets.all(10),
@@ -407,10 +517,7 @@ class _SidebarContent extends StatelessWidget {
                     ),
                     Text(
                       AuthService.instance.currentUser?.rol ?? '',
-                      style: const TextStyle(
-                        color: Colors.white38,
-                        fontSize: 11,
-                      ),
+                      style: const TextStyle(color: Colors.white38, fontSize: 11),
                     ),
                   ],
                 ),

@@ -1,13 +1,14 @@
 class MovimientoStock {
   int? id;
-
   int productoId;
-  String tipo; // 'entrada', 'salida', 'ajuste', 'reversion'
+  String tipo;
   int cantidad;
-  
   DateTime fecha;
   String? remitoId;
   String motivo;
+  String usuario;
+  int stockAnterior;
+  int stockNuevo;
 
   MovimientoStock({
     this.id,
@@ -17,6 +18,9 @@ class MovimientoStock {
     required this.fecha,
     this.remitoId,
     required this.motivo,
+    this.usuario = '',
+    this.stockAnterior = 0,
+    this.stockNuevo = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -28,6 +32,9 @@ class MovimientoStock {
       'fecha': fecha.toIso8601String(),
       'remitoId': remitoId,
       'motivo': motivo,
+      'usuario': usuario,
+      'stockAnterior': stockAnterior,
+      'stockNuevo': stockNuevo,
     };
   }
 
@@ -40,6 +47,9 @@ class MovimientoStock {
       fecha: DateTime.parse(map['fecha']),
       remitoId: map['remitoId'],
       motivo: map['motivo'] ?? '',
+      usuario: map['usuario'] ?? '',
+      stockAnterior: map['stockAnterior'] ?? 0,
+      stockNuevo: map['stockNuevo'] ?? 0,
     );
   }
 
@@ -51,6 +61,9 @@ class MovimientoStock {
     DateTime? fecha,
     String? remitoId,
     String? motivo,
+    String? usuario,
+    int? stockAnterior,
+    int? stockNuevo,
   }) {
     return MovimientoStock(
       id: id ?? this.id,
@@ -60,6 +73,9 @@ class MovimientoStock {
       fecha: fecha ?? this.fecha,
       remitoId: remitoId ?? this.remitoId,
       motivo: motivo ?? this.motivo,
+      usuario: usuario ?? this.usuario,
+      stockAnterior: stockAnterior ?? this.stockAnterior,
+      stockNuevo: stockNuevo ?? this.stockNuevo,
     );
   }
 }

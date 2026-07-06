@@ -1,10 +1,11 @@
 class ListaPrecio {
   int? id;
-
   String nombre;
   double porcentaje;
   bool activa;
   int orden;
+  String color;
+  int prioridad;
 
   ListaPrecio({
     this.id,
@@ -12,6 +13,8 @@ class ListaPrecio {
     required this.porcentaje,
     this.activa = true,
     this.orden = 0,
+    this.color = '',
+    this.prioridad = 0,
   });
 
   double calcularPrecio(double costo) => costo * (1 + porcentaje / 100);
@@ -23,6 +26,8 @@ class ListaPrecio {
       'porcentaje': porcentaje,
       'activa': activa ? 1 : 0,
       'orden': orden,
+      'color': color,
+      'prioridad': prioridad,
     };
   }
 
@@ -33,6 +38,8 @@ class ListaPrecio {
       porcentaje: (map['porcentaje'] ?? 0).toDouble(),
       activa: (map['activa'] ?? 1) == 1,
       orden: map['orden'] ?? 0,
+      color: map['color'] ?? '',
+      prioridad: map['prioridad'] ?? 0,
     );
   }
 
@@ -42,6 +49,8 @@ class ListaPrecio {
     double? porcentaje,
     bool? activa,
     int? orden,
+    String? color,
+    int? prioridad,
   }) {
     return ListaPrecio(
       id: id ?? this.id,
@@ -49,6 +58,8 @@ class ListaPrecio {
       porcentaje: porcentaje ?? this.porcentaje,
       activa: activa ?? this.activa,
       orden: orden ?? this.orden,
+      color: color ?? this.color,
+      prioridad: prioridad ?? this.prioridad,
     );
   }
 }
