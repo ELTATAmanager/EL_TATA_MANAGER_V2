@@ -1,62 +1,50 @@
-import 'package:sqflite/sqflite.dart';
-
 import '../database/database_helper.dart';
 import '../models/proveedor.dart';
+import 'package:sqflite/sqflite.dart';
 
 class ProveedorService {
-  final DatabaseHelper dbHelper = DatabaseHelper.instance;
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   Future<int> insertar(Proveedor proveedor) async {
-    final Database db = await dbHelper.database;
+    final db = await _dbHelper.database;
 
     return await db.insert(
-      "proveedores",
-      proveedor.toMap(),
+      'proveedores',
+      {
+        ...proveedor.toMap(),
+        'fechaCreacion': DateTime.now().toIso8601String(),
+      },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
   Future<int> actualizar(Proveedor proveedor) async {
-    final Database db = await dbHelper.database;
+    final db = await _dbHelper.database;
 
     return await db.update(
-      "proveedores",
+      'proveedores',
       proveedor.toMap(),
-      where: "id = ?",
+      where: 'id = ?',
       whereArgs: [proveedor.id],
     );
   }
 
   Future<int> eliminar(int id) async {
-    final Database db = await dbHelper.database;
+    final db = await _dbHelper.database;
 
     return await db.delete(
-      "proveedores",
-      where: "id = ?",
+      'proveedores',
+      where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  Future<List<Proveedor>> obtenerTodos() async {
-    final Database db = await dbHelper.database;
-
-    final resultado = await db.query(
-      "proveedores",
-      where: "activo = 1",
-      orderBy: "nombre",
-    );
-
-    return resultado
-        .map((e) => Proveedor.fromMap(e))
-        .toList();
-  }
-
   Future<Proveedor?> obtenerPorId(int id) async {
-    final Database db = await dbHelper.database;
+    final db = await _dbHelper.database;
 
     final resultado = await db.query(
-      "proveedores",
-      where: "id = ?",
+      'proveedores',
+      where: 'id = ?',
       whereArgs: [id],
       limit: 1,
     );
@@ -68,11 +56,25 @@ class ProveedorService {
     return Proveedor.fromMap(resultado.first);
   }
 
+  Future<List<Proveedor>> obtenerTodos() async {
+    final db = await _dbHelper.database;
+
+    final resultado = await db.query(
+      'proveedores',
+      where: 'activo = 1',
+      orderBy: 'nombre',
+    );
+
+    return resultado
+        .map((e) => Proveedor.fromMap(e))
+        .toList();
+  }
+
   Future<int> cantidad() async {
-    final Database db = await dbHelper.database;
+    final db = await _dbHelper.database;
 
     final resultado = await db.rawQuery(
-      "SELECT COUNT(*) total FROM proveedores",
+      'SELECT COUNT(*) total FROM proveedores',
     );
 
     return Sqflite.firstIntValue(resultado) ?? 0;
@@ -86,7 +88,7 @@ class ProveedorService {
     final proveedores = [
       "Bisso",
       "Arola",
-      "Wassington",
+      "Washington",
       "Fana",
       "Tapper",
       "Cuero Sur",
