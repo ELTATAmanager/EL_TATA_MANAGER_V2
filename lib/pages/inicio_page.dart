@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/branding_service.dart';
 import '../services/csv_service.dart';
 import 'backup_page.dart';
 import 'clientes_page.dart';
@@ -168,22 +169,22 @@ class _InicioPageState extends State<InicioPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.store,
                         color: Colors.orange,
                         size: 64,
                       ),
                       const SizedBox(height: 14),
-                      const Text(
-                        "EL TATA Manager",
-                        style: TextStyle(
+                      Text(
+                        BrandingService.instance.nombre,
+                        style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        "Gestor de inventario y ventas",
+                      Text(
+                        BrandingService.instance.slogan,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 28),

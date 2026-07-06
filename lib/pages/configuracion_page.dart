@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/branding_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 
@@ -14,6 +18,14 @@ class ConfiguracionPage extends StatefulWidget {
 class _ConfiguracionPageState extends State<ConfiguracionPage> {
   bool _mostrarImagenes = true;
 
+  // Branding
+  final _nombreCtrl = TextEditingController();
+  final _sloganCtrl = TextEditingController();
+  final _telefonoCtrl = TextEditingController();
+  final _direccionCtrl = TextEditingController();
+  String _logoPath = '';
+  bool _guardandoBranding = false;
+
   void _onThemeChanged() {
     if (mounted) {
       setState(() {});
@@ -25,12 +37,48 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     super.initState();
     themeProvider.addListener(_onThemeChanged);
     _cargarPreferencias();
+    _cargarBranding();
   }
 
   @override
   void dispose() {
     themeProvider.removeListener(_onThemeChanged);
+    _nombreCtrl.dispose();
+    _sloganCtrl.dispose();
+    _telefonoCtrl.dispose();
+    _direccionCtrl.dispose();
     super.dispose();
+  }
+
+  void _cargarBranding() {
+    final b = BrandingService.instance;
+    _nombreCtrl.text = b.nombre;
+    _sloganCtrl.text = b.slogan;
+    _telefonoCtrl.text = b.telefono;
+    _direccionCtrl.text = b.direccion;
+    setState(() => _logoPath = b.logoPath);
+  }
+
+  Future<void> _elegirLogo() async {
+    final picker = ImagePicker();
+    final img = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (img != null) setState(() => _logoPath = img.path);
+  }
+
+  Future<void> _guardarBranding() async {
+    setState(() => _guardandoBranding = true);
+    await BrandingService.instance.guardar(
+      nombre: _nombreCtrl.text.trim(),
+      slogan: _sloganCtrl.text.trim(),
+      telefono: _telefonoCtrl.text.trim(),
+      direccion: _direccionCtrl.text.trim(),
+      logoPath: _logoPath,
+    );
+    if (!mounted) return;
+    setState(() => _guardandoBranding = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Datos del negocio guardados')),
+    );
   }
 
   Future<void> _cargarPreferencias() async {
@@ -59,10 +107,130 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
       appBar: AppBar(title: const Text('Configuración')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Card(
-          elevation: 3,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // ── Branding ──────────────────────────────
+            Card(
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.storefront, color: colorScheme.primary),
+                        const SizedBox(width: 10),
+                        Text(
+                          'MI NEGOCIO',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: GestureDetector(
+                        onTap: _elegirLogo,
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 48,
+                              backgroundColor: colorScheme.primaryContainer,
+                              backgroundImage: _logoPath.isNotEmpty
+                                  ? FileImage(File(_logoPath))
+                                  : null,
+                              child: _logoPath.isEmpty
+                                  ? Icon(Icons.store,
+                                      size: 40, color: colorScheme.primary)
+                                  : null,
+                            ),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: CircleAvatar(
+                                radius: 14,
+                                backgroundColor: colorScheme.primary,
+                                child: const Icon(Icons.edit,
+                                    size: 16, color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Center(
+                      child: Text(
+                        'Tocá para cambiar el logo',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: Colors.grey),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _nombreCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre del negocio',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.business),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _sloganCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Slogan / descripción',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.short_text),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _telefonoCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Teléfono',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.phone),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _direccionCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Dirección',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _guardandoBranding ? null : _guardarBranding,
+                        icon: _guardandoBranding
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.save),
+                        label: const Text('GUARDAR DATOS DEL NEGOCIO'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // ── Tema ──────────────────────────────────
+            Card(
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -213,7 +381,10 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             ),
           ),
         ),
-      ),
-    );
+        const SizedBox(height: 16),
+      ],
+    ),
+  ),
+);
   }
 }

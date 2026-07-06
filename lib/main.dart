@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'pages/inicio_page.dart';
+import 'services/branding_service.dart';
 import 'theme/theme_provider.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeThemeProvider();
+  await BrandingService.instance.cargar();
 
   if (!kIsWeb) {
     sqfliteFfiInit();
