@@ -9,17 +9,13 @@ class CsvService {
 
   Future<int> analizarArchivo() async {
     final productos = await leerArchivo();
-
     if (productos.isEmpty) {
       return 0;
     }
-
     final existeBase = await produtoService.tieneProductos();
-
     if (!existeBase) {
       await produtoService.insertarLista(productos);
     }
-
     return productos.length;
   }
 
@@ -28,34 +24,25 @@ class CsvService {
       type: FileType.custom,
       allowedExtensions: ['csv'],
     );
-
     if (resultado == null) {
       return [];
     }
-
     final archivo = File(resultado.files.single.path!);
     final contenido = await archivo.readAsString();
-
     final filas = const CsvToListConverter(
       fieldDelimiter: ';',
       shouldParseNumbers: false,
     ).convert(contenido);
-
     final List<Producto> productos = [];
-
     for (int i = 1; i < filas.length; i++) {
       final fila = filas[i];
-
       if (fila.length < 18) {
         continue;
       }
-
       final codigo = fila[0].toString().trim();
-
       if (codigo.isEmpty) {
         continue;
       }
-
       productos.add(
         Producto(
           codigo: codigo,
@@ -72,7 +59,6 @@ class CsvService {
         ),
       );
     }
-
     return productos;
   }
 
@@ -82,11 +68,9 @@ class CsvService {
     valor = valor.replaceAll('"', '');
     valor = valor.replaceAll('.', '');
     valor = valor.replaceAll(',', '.');
-
     if (valor.isEmpty) {
       return 0;
     }
-
     return double.tryParse(valor) ?? 0;
   }
 }
