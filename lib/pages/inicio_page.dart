@@ -24,7 +24,7 @@ class _InicioPageState extends State<InicioPage> {
   final CsvService csvService = CsvService();
 
   bool cargando = false;
-  int selectedSidebar = 0;
+  int selectedSidebar = 1;
   int selectedBottom = 0;
 
   Future<void> analizar() async {
@@ -33,7 +33,6 @@ class _InicioPageState extends State<InicioPage> {
     try {
       final cantidad = await csvService.analizarArchivo();
       if (!mounted) return;
-
       setState(() => cargando = false);
 
       if (cantidad == 0) {
@@ -49,7 +48,6 @@ class _InicioPageState extends State<InicioPage> {
       );
     } catch (e) {
       if (!mounted) return;
-
       setState(() => cargando = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
@@ -58,98 +56,38 @@ class _InicioPageState extends State<InicioPage> {
   }
 
   void _abrirPagina(Widget page) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => page),
-    );
-  }
-
-  List<_ModuleConfig> _buildModules(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return [
-      _ModuleConfig(
-        icon: Icons.inventory_2_rounded,
-        title: 'Productos',
-        subtitle: 'Catálogo completo',
-        color: AppVisuals.primaryAccent(colorScheme),
-        onTap: () => _abrirPagina(const ProductosPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.groups_rounded,
-        title: 'Clientes',
-        subtitle: 'Gestión de clientes',
-        color: AppVisuals.secondaryAccent(colorScheme),
-        onTap: () => _abrirPagina(const ClientesPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.local_shipping_rounded,
-        title: 'Proveedores',
-        subtitle: 'Datos y contacto',
-        color: AppVisuals.info(colorScheme),
-        onTap: () => _abrirPagina(const ProveedoresPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.description_rounded,
-        title: 'Remitos',
-        subtitle: 'Ventas y entregas',
-        color: AppVisuals.warning(colorScheme),
-        onTap: () => _abrirPagina(const RemitosPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.warehouse_rounded,
-        title: 'Stock',
-        subtitle: 'Movimientos y saldo',
-        color: AppVisuals.success(colorScheme),
-        onTap: () => _abrirPagina(const StockPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.query_stats_rounded,
-        title: 'Dashboard',
-        subtitle: 'Métricas del negocio',
-        color: AppVisuals.tertiaryAccent(colorScheme),
-        onTap: () => _abrirPagina(const DashboardPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.cloud_upload_rounded,
-        title: 'Respaldo',
-        subtitle: 'Importar / Exportar',
-        color: AppVisuals.neutral(colorScheme),
-        onTap: () => _abrirPagina(const BackupPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.tune_rounded,
-        title: 'Configuración',
-        subtitle: 'Tema y ajustes',
-        color: AppVisuals.primaryAccent(colorScheme),
-        onTap: () => _abrirPagina(const ConfiguracionPage()),
-      ),
-    ];
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
   void _onSidebarTap(int index) {
     setState(() => selectedSidebar = index);
+
     switch (index) {
+      case 0:
+        break;
       case 1:
         _abrirPagina(const ProductosPage());
         break;
       case 2:
-        _abrirPagina(const ClientesPage());
-        break;
-      case 3:
         _abrirPagina(const ProveedoresPage());
         break;
-      case 4:
+      case 3:
         _abrirPagina(const RemitosPage());
         break;
-      case 5:
+      case 4:
         _abrirPagina(const StockPage());
         break;
-      case 6:
+      case 5:
         _abrirPagina(const DashboardPage());
+        break;
+      case 6:
+        _abrirPagina(const BackupPage());
         break;
       case 7:
         _abrirPagina(const ConfiguracionPage());
+        break;
+      case 8:
+        _abrirPagina(const ClientesPage());
         break;
       default:
         break;
@@ -158,17 +96,17 @@ class _InicioPageState extends State<InicioPage> {
 
   void _onBottomTap(int index) {
     setState(() => selectedBottom = index);
+
     switch (index) {
+      case 0:
+        break;
       case 1:
         _abrirPagina(const ProductosPage());
         break;
       case 2:
-        analizar();
-        break;
-      case 3:
         _abrirPagina(const RemitosPage());
         break;
-      case 4:
+      case 3:
         _abrirPagina(const ConfiguracionPage());
         break;
       default:
@@ -176,63 +114,83 @@ class _InicioPageState extends State<InicioPage> {
     }
   }
 
-  Widget _buildDesktopLayout(BuildContext context) {
-    final modules = _buildModules(context);
-    final theme = Theme.of(context);
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final desktop = constraints.maxWidth >= 1100;
 
-    return Row(
-      children: [
-        _DesktopSidebar(
-          selectedIndex: selectedSidebar,
-          onTap: _onSidebarTap,
-          title: BrandingService.instance.nombre,
+        return Scaffold(
+          backgroundColor: const Color(0xFF07090F),
+          appBar: desktop ? null : _buildMobileAppBar(),
+          body: desktop ? _buildDesktopLayout() : _buildMobileLayout(),
+          bottomNavigationBar: desktop ? null : _buildMobileBottomBar(),
+          floatingActionButton: desktop
+              ? null
+              : FloatingActionButton(
+                  onPressed: cargando ? null : analizar,
+                  backgroundColor: const Color(0xFFFF7A00),
+                  foregroundColor: Colors.white,
+                  child: cargando
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.add),
+                ),
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.miniCenterDocked,
+        );
+      },
+    );
+  }
+
+  PreferredSizeWidget _buildMobileAppBar() {
+    return AppBar(
+      backgroundColor: const Color(0xFF0C111A),
+      title: const Text(
+        'EL TATA MANAGER',
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
         ),
+      ),
+      centerTitle: true,
+      leading: IconButton(
+        icon: const Icon(Icons.menu_rounded),
+        onPressed: () {},
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none_rounded),
+          onPressed: () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Column(
+      children: [
+        _DesktopTopHeader(title: BrandingService.instance.nombre),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+            child: Row(
               children: [
-                _TopBar(
-                  title: BrandingService.instance.nombre,
-                  subtitle: BrandingService.instance.slogan,
-                  loading: cargando,
-                  onAnalyze: analizar,
+                _DesktopSidebar(
+                  selectedIndex: selectedSidebar,
+                  onTap: _onSidebarTap,
                 ),
-                const SizedBox(height: 14),
-                const _StatsRow(),
-                const SizedBox(height: 14),
-                Text(
-                  'Módulos',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 10),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final crossAxisCount = constraints.maxWidth >= 1250 ? 4 : 3;
-                      return GridView.builder(
-                        itemCount: modules.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 1.65,
-                        ),
-                        itemBuilder: (context, index) {
-                          final module = modules[index];
-                          return _ModuleCard(
-                            icon: module.icon,
-                            title: module.title,
-                            subtitle: module.subtitle,
-                            color: module.color,
-                            onTap: module.onTap,
-                          );
-                        },
-                      );
-                    },
+                  child: _DesktopWorkspace(
+                    onAnalyze: analizar,
+                    loading: cargando,
                   ),
                 ),
               ],
@@ -243,97 +201,304 @@ class _InicioPageState extends State<InicioPage> {
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context) {
-    final modules = _buildModules(context);
+  Widget _buildMobileLayout() {
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        _TopBar(
-          title: BrandingService.instance.nombre,
-          subtitle: BrandingService.instance.slogan,
-          loading: cargando,
-          onAnalyze: analizar,
-          compact: true,
-        ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: _StatsRow(compact: true),
-        ),
-        const SizedBox(height: 10),
-        Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            itemCount: modules.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.05,
+    return SafeArea(
+      top: false,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF141A25),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const TextField(
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        prefixIcon:
+                            Icon(Icons.search_rounded, color: Colors.white70),
+                        hintText: 'Buscar producto...',
+                        hintStyle: TextStyle(color: Colors.white60),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  height: 42,
+                  width: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF141A25),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.qr_code_scanner_rounded,
+                    color: AppVisuals.info(colorScheme),
+                  ),
+                ),
+              ],
             ),
-            itemBuilder: (context, index) {
-              final module = modules[index];
-              return _ModuleCard(
-                icon: module.icon,
-                title: module.title,
-                subtitle: module.subtitle,
-                color: module.color,
-                onTap: module.onTap,
-                compact: true,
-              );
-            },
           ),
-        ),
-      ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 1.75,
+              children: [
+                _MobileKpiCard(
+                  title: 'Productos',
+                  value: '2.458',
+                  icon: Icons.inventory_2_rounded,
+                  color: const Color(0xFF8B5CF6),
+                ),
+                _MobileKpiCard(
+                  title: 'Stock total',
+                  value: '15.768',
+                  icon: Icons.layers_rounded,
+                  color: const Color(0xFF22C55E),
+                ),
+                _MobileKpiCard(
+                  title: 'Valor de stock',
+                  value: '\$45.678.900',
+                  icon: Icons.attach_money_rounded,
+                  color: const Color(0xFF3B82F6),
+                ),
+                _MobileKpiCard(
+                  title: 'Sin stock',
+                  value: '128',
+                  icon: Icons.warning_amber_rounded,
+                  color: const Color(0xFFEF4444),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0C111A),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Productos recientes',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => _abrirPagina(const ProductosPage()),
+                        child: const Text('Ver todos'),
+                      ),
+                    ],
+                  ),
+                  const Divider(color: Colors.white10, height: 12),
+                  Expanded(
+                    child: ListView(
+                      children: const [
+                        _MobileProductTile(
+                          code: '3020',
+                          name: 'Suela Profeta Negra',
+                          stock: '15',
+                          price: '\$ 18.500',
+                        ),
+                        _MobileProductTile(
+                          code: '3050',
+                          name: 'Suela Profeta Marrón',
+                          stock: '23',
+                          price: '\$ 19.200',
+                        ),
+                        _MobileProductTile(
+                          code: 'WA01',
+                          name: 'Wass Cordón Redondo',
+                          stock: '120',
+                          price: '\$ 1.250',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
+  Widget _buildMobileBottomBar() {
+    return BottomAppBar(
+      color: const Color(0xFF0C111A),
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8,
+      child: SizedBox(
+        height: 62,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _BottomItem(
+              icon: Icons.home_rounded,
+              label: 'Inicio',
+              selected: selectedBottom == 0,
+              onTap: () => _onBottomTap(0),
+            ),
+            _BottomItem(
+              icon: Icons.inventory_2_rounded,
+              label: 'Productos',
+              selected: selectedBottom == 1,
+              onTap: () => _onBottomTap(1),
+            ),
+            const SizedBox(width: 24),
+            _BottomItem(
+              icon: Icons.point_of_sale_rounded,
+              label: 'Ventas',
+              selected: selectedBottom == 2,
+              onTap: () => _onBottomTap(2),
+            ),
+            _BottomItem(
+              icon: Icons.more_horiz_rounded,
+              label: 'Más',
+              selected: selectedBottom == 3,
+              onTap: () => _onBottomTap(3),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopTopHeader extends StatelessWidget {
+  final String title;
+
+  const _DesktopTopHeader({required this.title});
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 1000;
-
-        return Scaffold(
-          appBar: desktop
-              ? null
-              : AppBar(
-                  title: Text(BrandingService.instance.nombre),
-                  centerTitle: true,
+    return Container(
+      height: 96,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: const BoxDecoration(
+        color: Color(0xFF02050A),
+        border: Border(bottom: BorderSide(color: Colors.white12)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 124,
+            height: 66,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFF7A00), width: 1.2),
+            ),
+            child: const Center(
+              child: Text(
+                'EL TATA',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
                 ),
-          body: desktop
-              ? _buildDesktopLayout(context)
-              : _buildMobileLayout(context),
-          bottomNavigationBar: desktop
-              ? null
-              : BottomNavigationBar(
-                  currentIndex: selectedBottom,
-                  onTap: _onBottomTap,
-                  type: BottomNavigationBarType.fixed,
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.home_rounded),
-                      label: 'Inicio',
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'EL TATA ',
+                      style: TextStyle(
+                        color: Color(0xFFFF7A00),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 42,
+                      ),
                     ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.inventory_2_rounded),
-                      label: 'Productos',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.add_circle_rounded),
-                      label: 'Nuevo',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.point_of_sale_rounded),
-                      label: 'Ventas',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.more_horiz_rounded),
-                      label: 'Más',
+                    TextSpan(
+                      text: title.replaceAll('EL TATA ', ''),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 42,
+                      ),
                     ),
                   ],
                 ),
-        );
-      },
+              ),
+              const Text(
+                'Gestión de stock, ventas y mucho más',
+                style: TextStyle(color: Colors.white70, fontSize: 18),
+              ),
+            ],
+          ),
+          const Spacer(),
+          const _PlatformChip(icon: Icons.window_rounded, text: 'Windows'),
+          const SizedBox(width: 10),
+          const _PlatformChip(icon: Icons.android_rounded, text: 'Android'),
+          const SizedBox(width: 10),
+          const _PlatformChip(
+            icon: Icons.cloud_done_rounded,
+            text: 'Sincronizado\ncon Firebase',
+            multiline: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlatformChip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final bool multiline;
+
+  const _PlatformChip({
+    required this.icon,
+    required this.text,
+    this.multiline = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFF0EA5E9), size: 24),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          textAlign: multiline ? TextAlign.left : TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            height: 1.2,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -341,100 +506,107 @@ class _InicioPageState extends State<InicioPage> {
 class _DesktopSidebar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
-  final String title;
 
   const _DesktopSidebar({
     required this.selectedIndex,
     required this.onTap,
-    required this.title,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final items = [
+      (Icons.home_rounded, 'Inicio'),
+      (Icons.inventory_2_rounded, 'Productos'),
+      (Icons.local_shipping_rounded, 'Proveedores'),
+      (Icons.shopping_cart_rounded, 'Compras'),
+      (Icons.point_of_sale_rounded, 'Ventas'),
+      (Icons.warehouse_rounded, 'Stock'),
+      (Icons.bar_chart_rounded, 'Reportes'),
+      (Icons.settings_rounded, 'Configuración'),
+      (Icons.groups_rounded, 'Clientes'),
+    ];
 
     return Container(
-      width: 240,
+      width: 230,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0D111A) : colorScheme.surfaceContainer,
-        border: Border(right: BorderSide(color: colorScheme.outlineVariant)),
+        color: const Color(0xFF0B111C),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white10),
       ),
       child: Column(
         children: [
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+            height: 84,
+            margin: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFF0F1724),
+              border: Border.all(color: Colors.white10),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.storefront_rounded, color: colorScheme.primary),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  maxLines: 2,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+            child: const Center(
+              child: Text(
+                'EL TATA',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
+              ),
             ),
           ),
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(8),
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final selected = selectedIndex == index;
+
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 3),
+                  decoration: BoxDecoration(
+                    color:
+                        selected ? const Color(0xFFFF7A00) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListTile(
+                    dense: true,
+                    leading: Icon(
+                      item.$1,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    title: Text(
+                      item.$2,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    onTap: () => onTap(index),
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Row(
               children: [
-                _SidebarTile(
-                  icon: Icons.home_rounded,
-                  label: 'Inicio',
-                  selected: selectedIndex == 0,
-                  onTap: () => onTap(0),
+                CircleAvatar(
+                  radius: 16,
+                  child: Text('M'),
                 ),
-                _SidebarTile(
-                  icon: Icons.inventory_2_rounded,
-                  label: 'Productos',
-                  selected: selectedIndex == 1,
-                  onTap: () => onTap(1),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Mati Arcuri\nAdministrador',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ),
-                _SidebarTile(
-                  icon: Icons.groups_rounded,
-                  label: 'Clientes',
-                  selected: selectedIndex == 2,
-                  onTap: () => onTap(2),
-                ),
-                _SidebarTile(
-                  icon: Icons.local_shipping_rounded,
-                  label: 'Proveedores',
-                  selected: selectedIndex == 3,
-                  onTap: () => onTap(3),
-                ),
-                _SidebarTile(
-                  icon: Icons.description_rounded,
-                  label: 'Remitos',
-                  selected: selectedIndex == 4,
-                  onTap: () => onTap(4),
-                ),
-                _SidebarTile(
-                  icon: Icons.warehouse_rounded,
-                  label: 'Stock',
-                  selected: selectedIndex == 5,
-                  onTap: () => onTap(5),
-                ),
-                _SidebarTile(
-                  icon: Icons.query_stats_rounded,
-                  label: 'Dashboard',
-                  selected: selectedIndex == 6,
-                  onTap: () => onTap(6),
-                ),
-                _SidebarTile(
-                  icon: Icons.tune_rounded,
-                  label: 'Configuración',
-                  selected: selectedIndex == 7,
-                  onTap: () => onTap(7),
-                ),
+                Icon(Icons.expand_more, color: Colors.white70),
               ],
             ),
           ),
@@ -444,98 +616,237 @@ class _DesktopSidebar extends StatelessWidget {
   }
 }
 
-class _SidebarTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+class _DesktopWorkspace extends StatelessWidget {
+  final VoidCallback onAnalyze;
+  final bool loading;
 
-  const _SidebarTile({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
+  const _DesktopWorkspace({
+    required this.onAnalyze,
+    required this.loading,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: ListTile(
-        dense: true,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        selected: selected,
-        selectedTileColor: colorScheme.primary.withValues(alpha: 0.15),
-        leading: Icon(icon, size: 20),
-        title: Text(label),
-        onTap: onTap,
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'Productos',
+                style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              const SizedBox(
+                width: 340,
+                height: 42,
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Buscar producto...',
+                    prefixIcon: Icon(Icons.search_rounded),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: null,
+                icon: const Icon(Icons.filter_alt_outlined),
+                label: const Text('Filtros'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF7A00),
+                ),
+                onPressed: loading ? null : onAnalyze,
+                icon: loading
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_rounded),
+                label: const Text('Nuevo Producto'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GridView.count(
+            crossAxisCount: 4,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 2.3,
+            children: const [
+              _DesktopKpiCard(
+                title: 'Total productos',
+                value: '2.458',
+                icon: Icons.inventory_2_rounded,
+                color: Color(0xFF8B5CF6),
+              ),
+              _DesktopKpiCard(
+                title: 'Stock total',
+                value: '15.768',
+                icon: Icons.layers_rounded,
+                color: Color(0xFF22C55E),
+              ),
+              _DesktopKpiCard(
+                title: 'Valor de stock',
+                value: '\$ 45.678.900',
+                icon: Icons.attach_money_rounded,
+                color: Color(0xFF3B82F6),
+              ),
+              _DesktopKpiCard(
+                title: 'Productos sin stock',
+                value: '128',
+                icon: Icons.warning_amber_rounded,
+                color: Color(0xFFEF4444),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.black12),
+              ),
+              child: Column(
+                children: [
+                  const Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(8),
+                      child: DataTable(
+                        headingRowHeight: 44,
+                        dataRowMinHeight: 48,
+                        columns: [
+                          DataColumn(label: Text('Código')),
+                          DataColumn(label: Text('Descripción')),
+                          DataColumn(label: Text('Marca')),
+                          DataColumn(label: Text('Categoría')),
+                          DataColumn(label: Text('Stock')),
+                          DataColumn(label: Text('Precio Lista 1')),
+                          DataColumn(label: Text('Ubicación')),
+                        ],
+                        rows: [
+                          DataRow(cells: [
+                            DataCell(Text('3020')),
+                            DataCell(Text('Suela Profeta Negra')),
+                            DataCell(Text('Profeta')),
+                            DataCell(Text('Suelas')),
+                            DataCell(Text('15')),
+                            DataCell(Text('\$ 18.500')),
+                            DataCell(Text('A-02-04-B')),
+                          ]),
+                          DataRow(cells: [
+                            DataCell(Text('3050')),
+                            DataCell(Text('Suela Profeta Marrón')),
+                            DataCell(Text('Profeta')),
+                            DataCell(Text('Suelas')),
+                            DataCell(Text('23')),
+                            DataCell(Text('\$ 19.200')),
+                            DataCell(Text('A-02-05-A')),
+                          ]),
+                          DataRow(cells: [
+                            DataCell(Text('WA01')),
+                            DataCell(Text('Wass Cordón Redondo')),
+                            DataCell(Text('Wass')),
+                            DataCell(Text('Cordones')),
+                            DataCell(Text('120')),
+                            DataCell(Text('\$ 1.250')),
+                            DataCell(Text('B-01-03-C')),
+                          ]),
+                          DataRow(cells: [
+                            DataCell(Text('TP286-750')),
+                            DataCell(Text('Tapper TR286 750gr')),
+                            DataCell(Text('Tapper')),
+                            DataCell(Text('Adhesivos')),
+                            DataCell(Text('8')),
+                            DataCell(Text('\$ 9.800')),
+                            DataCell(Text('C-01-02-A')),
+                          ]),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    height: 54,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: const BoxDecoration(
+                      border: Border(top: BorderSide(color: Colors.black12)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Text('Mostrando 1 a 7 de 2.458 productos'),
+                        Spacer(),
+                        Text('1   2   3   4   5   ...   351'),
+                        SizedBox(width: 20),
+                        Text('7 por página'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _TopBar extends StatelessWidget {
+class _DesktopKpiCard extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final bool loading;
-  final VoidCallback onAnalyze;
-  final bool compact;
+  final String value;
+  final IconData icon;
+  final Color color;
 
-  const _TopBar({
+  const _DesktopKpiCard({
     required this.title,
-    required this.subtitle,
-    required this.loading,
-    required this.onAnalyze,
-    this.compact = false,
+    required this.value,
+    required this.icon,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Card(
-      margin: compact ? const EdgeInsets.fromLTRB(12, 12, 12, 10) : EdgeInsets.zero,
-      elevation: compact ? 1 : 2,
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: compact ? 12 : 16,
-          vertical: compact ? 10 : 12,
-        ),
-        child: Wrap(
-          spacing: 12,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          alignment: WrapAlignment.spaceBetween,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(title, style: const TextStyle(color: Colors.black54)),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-            FilledButton.icon(
-              onPressed: loading ? null : onAnalyze,
-              icon: loading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.analytics_rounded),
-              label: const Text('Analizar lista'),
+            CircleAvatar(
+              radius: 17,
+              backgroundColor: color.withValues(alpha: 0.15),
+              child: Icon(icon, color: color),
             ),
           ],
         ),
@@ -544,120 +855,53 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class _StatsRow extends StatelessWidget {
-  final bool compact;
-
-  const _StatsRow({this.compact = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final cards = [
-      _InfoStatData(
-        title: 'Productos',
-        value: 'Gestión',
-        icon: Icons.inventory_2_rounded,
-        color: AppVisuals.primaryAccent(colorScheme),
-      ),
-      _InfoStatData(
-        title: 'Stock',
-        value: 'Control',
-        icon: Icons.layers_rounded,
-        color: AppVisuals.success(colorScheme),
-      ),
-      _InfoStatData(
-        title: 'Ventas',
-        value: 'Remitos',
-        icon: Icons.payments_rounded,
-        color: AppVisuals.info(colorScheme),
-      ),
-      _InfoStatData(
-        title: 'Sincronización',
-        value: 'Respaldo',
-        icon: Icons.cloud_done_rounded,
-        color: AppVisuals.warning(colorScheme),
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = compact || constraints.maxWidth < 900 ? 2 : 4;
-        final height = compact ? 160.0 : 86.0;
-
-        return SizedBox(
-          height: height,
-          child: GridView.builder(
-            itemCount: cards.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: compact ? 2.15 : 2.8,
-            ),
-            itemBuilder: (context, index) => _InfoStatCard(data: cards[index]),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _InfoStatData {
+class _MobileKpiCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
   final Color color;
 
-  const _InfoStatData({
+  const _MobileKpiCard({
     required this.title,
     required this.value,
     required this.icon,
     required this.color,
   });
-}
-
-class _InfoStatCard extends StatelessWidget {
-  final _InfoStatData data;
-
-  const _InfoStatCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Card(
-      margin: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.all(10),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: data.color.withValues(alpha: 0.15),
-              child: Icon(data.icon, color: data.color, size: 16),
-            ),
+            Icon(icon, color: Colors.white, size: 19),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    data.title,
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   Text(
-                    data.value,
+                    value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
                   ),
                 ],
               ),
@@ -669,85 +913,106 @@ class _InfoStatCard extends StatelessWidget {
   }
 }
 
-class _ModuleConfig {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final Color color;
+class _MobileProductTile extends StatelessWidget {
+  final String code;
+  final String name;
+  final String stock;
+  final String price;
 
-  const _ModuleConfig({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    required this.color,
-  });
-}
-
-class _ModuleCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final Color color;
-  final bool compact;
-
-  const _ModuleCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    required this.color,
-    this.compact = false,
+  const _MobileProductTile({
+    required this.code,
+    required this.name,
+    required this.stock,
+    required this.price,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: compact ? 1 : 2,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.all(compact ? 10 : 12),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: compact ? 18 : 20,
-                backgroundColor: color.withValues(alpha: 0.15),
-                child: Icon(icon, size: compact ? 18 : 20, color: color),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0F17),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: 46,
+            width: 46,
+            decoration: BoxDecoration(
+              color: Colors.white12,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.checkroom_rounded, color: Colors.white70),
           ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(code, style: const TextStyle(color: Colors.white)),
+                Text(
+                  name,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                Text(
+                  'Stock: $stock',
+                  style: const TextStyle(color: Colors.white54),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            price,
+            style: const TextStyle(
+              color: Color(0xFFFF7A00),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _BottomItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        width: 64,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: selected ? const Color(0xFFFF7A00) : Colors.white70,
+              size: 22,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? const Color(0xFFFF7A00) : Colors.white70,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
       ),
     );
