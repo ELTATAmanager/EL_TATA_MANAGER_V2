@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
 import '../models/comparacion.dart';
-import '../services/comparador_service.dart';
 
 class ComparacionPage extends StatefulWidget {
   const ComparacionPage({super.key});
@@ -11,8 +9,6 @@ class ComparacionPage extends StatefulWidget {
 }
 
 class _ComparacionPageState extends State<ComparacionPage> {
-  final ComparadorService comparadorService = ComparadorService();
-
   List<Comparacion> comparaciones = [];
 
   int aumentos = 0;
@@ -20,7 +16,7 @@ class _ComparacionPageState extends State<ComparacionPage> {
   int nuevos = 0;
   int iguales = 0;
 
-  bool cargando = true;
+  bool cargando = false;
 
   @override
   void initState() {
@@ -29,15 +25,7 @@ class _ComparacionPageState extends State<ComparacionPage> {
   }
 
   Future<void> cargarDatos() async {
-    comparaciones = await comparadorService.obtenerComparacion();
-
-    aumentos = await comparadorService.cantidadAumentos();
-    bajas = await comparadorService.cantidadBajas();
-    nuevos = await comparadorService.cantidadNuevos();
-    iguales = await comparadorService.cantidadIguales();
-
     if (!mounted) return;
-
     setState(() {
       cargando = false;
     });
@@ -47,13 +35,10 @@ class _ComparacionPageState extends State<ComparacionPage> {
     switch (estado) {
       case 'AUMENTO':
         return Colors.green;
-
       case 'BAJA':
         return Colors.red;
-
       case 'NUEVO':
         return Colors.blue;
-
       default:
         return Colors.grey;
     }
@@ -63,23 +48,16 @@ class _ComparacionPageState extends State<ComparacionPage> {
     switch (estado) {
       case 'AUMENTO':
         return Icons.arrow_upward;
-
       case 'BAJA':
         return Icons.arrow_downward;
-
       case 'NUEVO':
         return Icons.fiber_new;
-
       default:
         return Icons.remove;
     }
   }
 
-  Widget tarjeta(
-    String titulo,
-    int valor,
-    Color color,
-  ) {
+  Widget tarjeta(String titulo, int valor, Color color) {
     return Card(
       child: SizedBox(
         width: 170,
@@ -90,9 +68,7 @@ class _ComparacionPageState extends State<ComparacionPage> {
             children: [
               Text(
                 titulo,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
@@ -114,9 +90,7 @@ class _ComparacionPageState extends State<ComparacionPage> {
   Widget build(BuildContext context) {
     if (cargando) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -127,7 +101,6 @@ class _ComparacionPageState extends State<ComparacionPage> {
       body: Column(
         children: [
           const SizedBox(height: 10),
-
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -138,25 +111,16 @@ class _ComparacionPageState extends State<ComparacionPage> {
               tarjeta("Sin cambios", iguales, Colors.grey),
             ],
           ),
-
           const SizedBox(height: 10),
-
           Expanded(
             child: ListView.builder(
               itemCount: comparaciones.length,
               itemBuilder: (context, index) {
                 final item = comparaciones[index];
-
                 return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   child: ListTile(
-                    leading: Icon(
-                      iconoEstado(item.estado),
-                      color: colorEstado(item.estado),
-                    ),
+                    leading: Icon(iconoEstado(item.estado), color: colorEstado(item.estado)),
                     title: Text(item.descripcion),
                     subtitle: Text(
                       "Código: ${item.codigo}\n"
@@ -175,7 +139,6 @@ class _ComparacionPageState extends State<ComparacionPage> {
               },
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(15),
             child: SizedBox(
@@ -185,9 +148,7 @@ class _ComparacionPageState extends State<ComparacionPage> {
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text(
-                        "En el próximo paso actualizaremos automáticamente la base de datos.",
-                      ),
+                      content: Text("En el próximo paso actualizaremos automáticamente la base de datos."),
                     ),
                   );
                 },
