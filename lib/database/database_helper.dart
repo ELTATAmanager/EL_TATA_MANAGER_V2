@@ -22,7 +22,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 11,
+      version: 12,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -125,7 +125,8 @@ CREATE TABLE comparacion(
   precioViejo REAL,
   precioNuevo REAL,
   estado TEXT,
-  marca TEXT
+  marca TEXT,
+  proveedor TEXT DEFAULT ''
 )
 ''');
 
@@ -575,6 +576,12 @@ CREATE TABLE IF NOT EXISTS ventas(
       await _crearTablaPermisos(db);
       await _crearTablaVentas(db);
       await _crearIndices(db);
+    }
+
+    if (oldVersion < 12) {
+      await _agregarColumnas(db, 'comparacion', {
+        'proveedor': "TEXT DEFAULT ''",
+      });
     }
   }
 

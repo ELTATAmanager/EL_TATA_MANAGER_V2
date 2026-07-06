@@ -14,6 +14,7 @@ class ComparacionPage extends StatefulWidget {
 class _ComparacionPageState extends State<ComparacionPage> {
   final CsvService csvService = CsvService();
   final ComparadorService comparadorService = ComparadorService();
+  final TextEditingController _proveedorCtrl = TextEditingController();
 
   List<Comparacion> lista = [];
   bool cargando = true;
@@ -28,6 +29,12 @@ class _ComparacionPageState extends State<ComparacionPage> {
   void initState() {
     super.initState();
     cargar();
+  }
+
+  @override
+  void dispose() {
+    _proveedorCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> cargar() async {
@@ -46,10 +53,37 @@ class _ComparacionPageState extends State<ComparacionPage> {
   }
 
   Future<void> analizarNuevaLista() async {
-    setState(() {
-      cargando = true;
-    });
-    await csvService.analizarArchivo();
+    // Pedir proveedor si está vacío
+    if (_proveedorCtrl.text.trim().isEmpty) {
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Nombre del proveedor'),
+          content: TextField(
+            controller: _proveedorCtrl,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Ej: Febo, Bisso, Arola...',
+              labelText: 'Proveedor',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Continuar'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!mounted) return;
+    setState(() => cargando = true);
+    await csvService.analizarArchivoConProveedor(_proveedorCtrl.text.trim());
     if (!mounted) return;
     await cargar();
   }
@@ -109,13 +143,14 @@ class _ComparacionPageState extends State<ComparacionPage> {
     );
   }
 
-  Future<void> actualizarPrecios() async {
+  Future<void> actualizarCostos() async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Actualizar base de precios'),
+        title: const Text('Actualizar costos'),
         content: Text(
-          '¿Actualizar ${lista.length} productos? Esta acción actualizará los precios en la base de datos.',
+          '¿Actualizar el costo de ${lista.where((e) => e.estado != "IGUAL").length} productos?\n\n'
+          'Solo se modificará el COSTO. El precio de venta, stock y demás datos no cambiarán.',
         ),
         actions: [
           TextButton(
@@ -139,6 +174,7 @@ class _ComparacionPageState extends State<ComparacionPage> {
     });
     await comparadorService.actualizarProductos();
     await comparadorService.limpiarComparaciones();
+    _proveedorCtrl.clear();
     if (!mounted) return;
     setState(() {
       lista = [];
@@ -149,7 +185,7 @@ class _ComparacionPageState extends State<ComparacionPage> {
       cargando = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Precios actualizados correctamente.")),
+      const SnackBar(content: Text("Costos actualizados correctamente.")),
     );
   }
 
@@ -196,21 +232,51 @@ class _ComparacionPageState extends State<ComparacionPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Comparación de Precios"),
+        title: const Text("Comparador de Costos"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.upload_file_rounded),
+            tooltip: 'Cargar lista CSV',
             onPressed: analizarNuevaLista,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Actualizar',
+            onPressed: cargar,
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: lista.isEmpty ? null : actualizarPrecios,
-        icon: const Icon(Icons.save),
-        label: const Text("ACTUALIZAR"),
-      ),
+      floatingActionButton: lista.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: actualizarCostos,
+              icon: const Icon(Icons.save_rounded),
+              label: const Text("ACTUALIZAR COSTOS"),
+            )
+          : null,
       body: Column(
         children: [
+          // Header con proveedor actual
+          if (lista.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+              child: Row(
+                children: [
+                  const Icon(Icons.local_shipping_rounded, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    lista.first.proveedor.isNotEmpty
+                        ? 'Lista: ${lista.first.proveedor}'
+                        : 'Lista cargada',
+                    style: theme.textTheme.labelLarge,
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${lista.length} productos',
+                    style: theme.textTheme.labelMedium,
+                  ),
+                ],
+              ),
+            ),
           if (!cargando && lista.isNotEmpty) ...[
             const SizedBox(height: 10),
             SingleChildScrollView(
@@ -218,8 +284,8 @@ class _ComparacionPageState extends State<ComparacionPage> {
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [
-                  _statChip("SUBIO", aumentos, colorEstado("SUBIO")),
-                  _statChip("BAJO", bajas, colorEstado("BAJO")),
+                  _statChip("SUBIÓ", aumentos, colorEstado("SUBIO")),
+                  _statChip("BAJÓ", bajas, colorEstado("BAJO")),
                   _statChip("NUEVO", nuevos, colorEstado("NUEVO")),
                   _statChip("IGUAL", iguales, colorEstado("IGUAL")),
                 ],
@@ -245,41 +311,74 @@ class _ComparacionPageState extends State<ComparacionPage> {
             child: cargando
                 ? const Center(child: CircularProgressIndicator())
                 : listaFiltrada.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "No hay diferencias.",
-                          style: TextStyle(fontSize: 20),
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.compare_arrows_rounded,
+                              size: 64,
+                              color:
+                                  theme.colorScheme.onSurface.withValues(alpha: .3),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              lista.isEmpty
+                                  ? 'Cargá una lista CSV para comparar costos'
+                                  : 'No hay diferencias con el filtro seleccionado.',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: .5),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (lista.isEmpty) ...[
+                              const SizedBox(height: 16),
+                              FilledButton.icon(
+                                onPressed: analizarNuevaLista,
+                                icon: const Icon(Icons.upload_file_rounded),
+                                label: const Text('Cargar lista'),
+                              ),
+                            ],
+                          ],
                         ),
                       )
                     : ListView.builder(
                         itemCount: listaFiltrada.length,
                         itemBuilder: (context, index) {
                           final item = listaFiltrada[index];
+                          final pct = item.precioViejo > 0
+                              ? ((item.precioNuevo - item.precioViejo) /
+                                      item.precioViejo) *
+                                  100
+                              : 0.0;
                           return Card(
                             margin: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
                             child: ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: colorEstado(item.estado),
-                                child: Icon(iconoEstado(item.estado),
-                                    color: Colors.white),
+                                backgroundColor: colorEstado(item.estado)
+                                    .withValues(alpha: .15),
+                                child: Icon(
+                                  iconoEstado(item.estado),
+                                  color: colorEstado(item.estado),
+                                ),
                               ),
                               title: Text(
                                 item.descripcion,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
+                                style:
+                                    const TextStyle(fontWeight: FontWeight.bold),
                               ),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      const SizedBox(
-                                        width: 120,
-                                        child: Text("Código",
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold)),
+                                      SizedBox(
+                                        width: 110,
+                                        child: Text('Código',
+                                            style: theme.textTheme.labelSmall),
                                       ),
                                       Expanded(child: Text(item.codigo)),
                                     ],
@@ -287,78 +386,79 @@ class _ComparacionPageState extends State<ComparacionPage> {
                                   if (item.marca.isNotEmpty)
                                     Row(
                                       children: [
-                                        const SizedBox(
-                                          width: 120,
-                                          child: Text("Marca",
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold)),
+                                        SizedBox(
+                                          width: 110,
+                                          child: Text('Marca',
+                                              style: theme.textTheme.labelSmall),
                                         ),
                                         Expanded(child: Text(item.marca)),
                                       ],
                                     ),
                                   Row(
                                     children: [
-                                      const SizedBox(
-                                        width: 120,
-                                        child: Text("Precio viejo",
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold)),
+                                      SizedBox(
+                                        width: 110,
+                                        child: Text('Costo anterior',
+                                            style: theme.textTheme.labelSmall),
                                       ),
                                       Expanded(
-                                          child: Text(
-                                              "\$${item.precioViejo.toStringAsFixed(2)}")),
+                                        child: Text(
+                                          item.precioViejo == 0
+                                              ? '—'
+                                              : '\$${item.precioViejo.toStringAsFixed(2)}',
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   Row(
                                     children: [
-                                      const SizedBox(
-                                        width: 120,
-                                        child: Text("Precio nuevo",
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold)),
+                                      SizedBox(
+                                        width: 110,
+                                        child: Text('Costo nuevo',
+                                            style: theme.textTheme.labelSmall),
                                       ),
                                       Expanded(
-                                          child: Text(
-                                              "\$${item.precioNuevo.toStringAsFixed(2)}")),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: colorEstado(item.estado)
-                                          .withValues(alpha: .15),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      item.estado,
-                                      style: TextStyle(
-                                        color: colorEstado(item.estado),
-                                        fontWeight: FontWeight.bold,
+                                        child: Text(
+                                          '\$${item.precioNuevo.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            color: colorEstado(item.estado),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ],
                               ),
-                              trailing: SizedBox(
-                                width: 80,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      item.precioViejo == 0
-                                          ? "-"
-                                          : "${(((item.precioNuevo - item.precioViejo) / item.precioViejo) * 100).toStringAsFixed(1)}%",
-                                      style: TextStyle(
-                                        color: colorEstado(item.estado),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                              isThreeLine: true,
+                              trailing: item.estado == 'NUEVO'
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: colorEstado('NUEVO')
+                                            .withValues(alpha: .15),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                      child: Text(
+                                        'NUEVO',
+                                        style: TextStyle(
+                                          color: colorEstado('NUEVO'),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    )
+                                  : item.precioViejo == 0
+                                      ? null
+                                      : Text(
+                                          '${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(1)}%',
+                                          style: TextStyle(
+                                            color: colorEstado(item.estado),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
                             ),
                           );
                         },

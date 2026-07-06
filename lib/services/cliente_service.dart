@@ -93,4 +93,27 @@ class ClienteService {
     final resultado = await db.query('clientes', orderBy: 'nombre');
     return resultado.map((e) => Cliente.fromMap(e)).toList();
   }
+
+  /// Busca o crea el cliente especial MOSTRADOR para Venta Rápida.
+  Future<Cliente> obtenerOCrearMostrador() async {
+    final db = await dbHelper.database;
+    final rows = await db.query(
+      'clientes',
+      where: 'UPPER(nombre) = ?',
+      whereArgs: ['MOSTRADOR'],
+      limit: 1,
+    );
+    if (rows.isNotEmpty) {
+      return Cliente.fromMap(rows.first);
+    }
+    // Crear cliente MOSTRADOR
+    final mostrador = Cliente(
+      nombre: 'MOSTRADOR',
+      telefono: '',
+      direccion: '',
+      observaciones: 'Cliente especial para ventas rápidas en mostrador',
+    );
+    final id = await insertar(mostrador);
+    return mostrador.copyWith(id: id);
+  }
 }

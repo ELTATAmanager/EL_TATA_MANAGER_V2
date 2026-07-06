@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/comparacion.dart';
 import '../models/producto.dart';
+import 'auth_service.dart';
 import 'producto_service.dart';
 
 class ComparadorService {
@@ -27,7 +28,12 @@ class ComparadorService {
     return resultado.map((e) => Comparacion.fromMap(e)).toList();
   }
 
-  Future<void> compararProductos(List<Producto> productosImportados) async {
+  /// Compara la lista importada contra la base usando el campo [costo].
+  /// [proveedor] identifica de qué lista/proveedor provienen los datos.
+  Future<void> compararProductos(
+    List<Producto> productosImportados, {
+    String proveedor = '',
+  }) async {
     await limpiarComparaciones();
     for (final productoNuevo in productosImportados) {
       final productoViejo =
@@ -38,52 +44,85 @@ class ComparadorService {
             codigo: productoNuevo.codigo,
             descripcion: productoNuevo.descripcion,
             precioViejo: 0,
-            precioNuevo: productoNuevo.precio,
+            precioNuevo: productoNuevo.costo,
             estado: 'NUEVO',
             marca: productoNuevo.marca,
+            proveedor: proveedor,
           ),
         );
         continue;
       }
       String estado = 'IGUAL';
-      if (productoNuevo.precio > productoViejo.precio) {
+      if (productoNuevo.costo > productoViejo.costo) {
         estado = 'SUBIO';
-      } else if (productoNuevo.precio < productoViejo.precio) {
+      } else if (productoNuevo.costo < productoViejo.costo) {
         estado = 'BAJO';
       }
       await guardarComparacion(
         Comparacion(
           codigo: productoNuevo.codigo,
           descripcion: productoNuevo.descripcion,
-          precioViejo: productoViejo.precio,
-          precioNuevo: productoNuevo.precio,
+          precioViejo: productoViejo.costo,
+          precioNuevo: productoNuevo.costo,
           estado: estado,
           marca: productoNuevo.marca,
+          proveedor: proveedor,
         ),
       );
     }
   }
 
+  /// Actualiza **únicamente el costo** de los productos en comparación.
+  /// No modifica descripción, categoría, marca, proveedor, foto, precio de venta ni stock.
   Future<void> actualizarProductos() async {
     final comparaciones = await obtenerComparacion();
+    final db = await DatabaseHelper.instance.database;
+    final usuario = AuthService.instance.currentUser?.usuario ?? 'sistema';
+    final ahora = DateTime.now().toIso8601String();
+
     for (final comp in comparaciones) {
       final producto = await productoService.buscarPorCodigo(comp.codigo);
       if (producto != null) {
-        await productoService.actualizar(
-          producto.copyWith(precio: comp.precioNuevo),
-        );
-      } else {
+        if (comp.precioNuevo != comp.precioViejo) {
+          // Actualizar solo costo, mantener precio de venta y demás campos
+          await db.update(
+            'productos',
+            {'costo': comp.precioNuevo},
+            where: 'id = ?',
+            whereArgs: [producto.id],
+          );
+
+          // Registrar historial
+          await db.insert('historial_precios', {
+            'productoId': producto.id,
+            'fecha': ahora,
+            'usuario': usuario,
+            'costoAnterior': comp.precioViejo,
+            'costoNuevo': comp.precioNuevo,
+            'precioAnterior': producto.precio,
+            'precioNuevo': producto.precio,
+            'porcentaje': comp.precioViejo > 0
+                ? ((comp.precioNuevo - comp.precioViejo) / comp.precioViejo) *
+                    100
+                : 0.0,
+            'listaModificada':
+                comp.proveedor.isNotEmpty ? comp.proveedor : 'Lista proveedor',
+            'motivo': 'Actualización de costo por lista',
+          });
+        }
+      } else if (comp.estado == 'NUEVO') {
+        // Crear producto nuevo con solo los datos del CSV/Excel
         await productoService.insertar(
           Producto(
             codigo: comp.codigo,
             descripcion: comp.descripcion,
             marca: comp.marca,
             categoria: '',
-            proveedor: '',
+            proveedor: comp.proveedor,
             ubicacion: '',
             stock: 0,
-            costo: 0,
-            precio: comp.precioNuevo,
+            costo: comp.precioNuevo,
+            precio: 0,
             observaciones: '',
             foto: '',
           ),

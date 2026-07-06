@@ -8,12 +8,14 @@ import '../services/permisos_service.dart';
 import 'auditoria_page.dart';
 import 'backup_page.dart';
 import 'busqueda_global_page.dart';
+import 'centro_importaciones_page.dart';
 import 'clientes_page.dart';
 import 'comparacion_page.dart';
 import 'compras_page.dart';
 import 'configuracion_page.dart';
 import 'dashboard_page.dart';
 import 'etiquetas_page.dart';
+import 'importacion_page.dart';
 import 'inteligencia_comercial_page.dart';
 import 'listas_precio_page.dart';
 import 'login_page.dart';
@@ -24,6 +26,7 @@ import 'remitos_page.dart';
 import 'reportes_page.dart';
 import 'stock_page.dart';
 import 'usuarios_page.dart';
+import 'venta_rapida_page.dart';
 
 class _ShellItem {
   final IconData icon;
@@ -67,10 +70,29 @@ class _MainShellState extends State<MainShell> {
           quickAccess: true,
         ),
         _ShellItem(
+          icon: Icons.point_of_sale_rounded,
+          title: 'Venta Rápida',
+          modulo: 'remitos',
+          builder: () => const VentaRapidaPage(),
+          quickAccess: true,
+        ),
+        _ShellItem(
           icon: Icons.compare_arrows_rounded,
           title: 'Comparador de listas',
           modulo: 'listas_precios',
           builder: () => const ComparacionPage(),
+        ),
+        _ShellItem(
+          icon: Icons.hub_rounded,
+          title: 'Importaciones',
+          modulo: 'productos',
+          builder: () => const CentroImportacionesPage(),
+        ),
+        _ShellItem(
+          icon: Icons.upload_file_rounded,
+          title: 'Importar Productos',
+          modulo: 'productos',
+          builder: () => const ImportacionPage(),
         ),
         _ShellItem(
           icon: Icons.warehouse_rounded,

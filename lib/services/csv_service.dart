@@ -12,6 +12,10 @@ class CsvService {
   final ComparadorService comparadorService = ComparadorService();
 
   Future<int> analizarArchivo() async {
+    return analizarArchivoConProveedor('');
+  }
+
+  Future<int> analizarArchivoConProveedor(String proveedor) async {
     final productos = await leerArchivo();
     if (productos.isEmpty) {
       return 0;
@@ -20,7 +24,10 @@ class CsvService {
     if (!existeBase) {
       await produtoService.insertarLista(productos);
     } else {
-      await comparadorService.compararProductos(productos);
+      await comparadorService.compararProductos(
+        productos,
+        proveedor: proveedor,
+      );
     }
     return productos.length;
   }
