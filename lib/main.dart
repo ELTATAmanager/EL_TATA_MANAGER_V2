@@ -11,7 +11,13 @@ void main() async {
   initializeThemeProvider();
   await BrandingService.instance.cargar();
 
-  if (!kIsWeb) {
+  const desktopPlatforms = {
+    TargetPlatform.windows,
+    TargetPlatform.linux,
+    TargetPlatform.macOS,
+  };
+
+  if (!kIsWeb && desktopPlatforms.contains(defaultTargetPlatform)) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
