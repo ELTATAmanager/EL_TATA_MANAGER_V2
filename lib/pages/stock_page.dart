@@ -79,6 +79,7 @@ class _StockPageState extends State<StockPage> {
   Future<void> registrarMovimiento({Producto? productoInicial}) async {
     Producto? productoSeleccionado = productoInicial;
     String tipo = productoInicial != null ? 'entrada' : 'entrada';
+    final messenger = ScaffoldMessenger.of(context);
     final cantidadController = TextEditingController(text: '1');
     final motivoController = TextEditingController(
       text: productoInicial != null ? 'Reposición de stock' : '',
@@ -203,7 +204,7 @@ class _StockPageState extends State<StockPage> {
     final cantidad = int.tryParse(cantidadController.text) ?? 0;
     if (cantidad <= 0) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Ingresá una cantidad válida.')),
       );
       return;
@@ -224,7 +225,7 @@ class _StockPageState extends State<StockPage> {
     if (!mounted) return;
     await cargar();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       const SnackBar(content: Text('Movimiento registrado correctamente.')),
     );
   }

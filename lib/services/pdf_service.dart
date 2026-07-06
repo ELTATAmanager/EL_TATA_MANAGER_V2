@@ -232,7 +232,7 @@ class PdfService {
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        const pw.Text(
+                        pw.Text(
                           'Subtotal:',
                           style: pw.TextStyle(fontSize: 10),
                         ),
