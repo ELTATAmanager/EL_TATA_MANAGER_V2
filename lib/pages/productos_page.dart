@@ -14,6 +14,8 @@ class ProductosPage extends StatefulWidget {
 }
 
 class _ProductosPageState extends State<ProductosPage> {
+  static const int _stockNivelAlto = 10;
+
   final ProductoService service = ProductoService();
   final TextEditingController buscarController = TextEditingController();
 
@@ -80,7 +82,7 @@ class _ProductosPageState extends State<ProductosPage> {
   Color _stockColor(int stock) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (stock > 10) return AppVisuals.success(colorScheme);
+    if (stock > _stockNivelAlto) return AppVisuals.success(colorScheme);
     if (stock > 0) return AppVisuals.warning(colorScheme);
     return AppVisuals.danger(colorScheme);
   }
