@@ -120,7 +120,7 @@ class _StockPageState extends State<StockPage> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: tipo,
+                  initialValue: tipo,
                   decoration: const InputDecoration(
                     labelText: 'Tipo',
                     border: OutlineInputBorder(),
@@ -136,7 +136,7 @@ class _StockPageState extends State<StockPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<Producto>(
-                  value: productoSeleccionado,
+                  initialValue: productoSeleccionado,
                   decoration: const InputDecoration(
                     labelText: 'Producto',
                     border: OutlineInputBorder(),
@@ -223,6 +223,7 @@ class _StockPageState extends State<StockPage> {
 
     if (!mounted) return;
     await cargar();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Movimiento registrado correctamente.')),
     );

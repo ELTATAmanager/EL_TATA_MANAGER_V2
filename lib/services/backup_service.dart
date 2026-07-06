@@ -36,7 +36,7 @@ class BackupService {
   }
 
   Future<bool> restaurarBackup() async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       allowMultiple: false,
     );

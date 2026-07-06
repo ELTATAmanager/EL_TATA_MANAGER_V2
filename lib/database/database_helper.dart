@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -17,7 +18,7 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'eltata.db');
 
-    print('Base de datos: $path');
+    debugPrint('Base de datos: $path');
 
     return openDatabase(
       path,

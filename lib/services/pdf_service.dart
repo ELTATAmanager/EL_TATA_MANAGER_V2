@@ -182,7 +182,7 @@ class PdfService {
           ),
           pw.SizedBox(height: 20),
           // ── Tabla de productos ────────────────────────
-          pw.Table.fromTextArray(
+          pw.TableHelper.fromTextArray(
             border: null,
             headerDecoration: pw.BoxDecoration(
               color: PdfColors.orange,

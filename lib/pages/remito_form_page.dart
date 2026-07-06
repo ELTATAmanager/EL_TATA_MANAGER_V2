@@ -1,4 +1,3 @@
-import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
@@ -514,7 +513,7 @@ class _RemitoFormPageState extends State<RemitoFormPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         DropdownButtonFormField<Cliente>(
-                          value: clienteSeleccionado,
+                          initialValue: clienteSeleccionado,
                           decoration: InputDecoration(
                             labelText: 'Cliente',
                             prefixIcon: const Icon(Icons.person),

@@ -24,7 +24,7 @@ class CsvService {
   }
 
   Future<List<Producto>> leerArchivo() async {
-    final resultado = await FilePicker.pickFiles(
+    final resultado = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
     );

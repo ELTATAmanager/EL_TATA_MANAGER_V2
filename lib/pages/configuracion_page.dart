@@ -283,7 +283,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: themeProvider.fuente,
+                  initialValue: themeProvider.fuente,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                   ),
