@@ -28,6 +28,18 @@ import 'stock_page.dart';
 import 'usuarios_page.dart';
 import 'venta_rapida_page.dart';
 
+// ── Paleta fija para la barra lateral oscura ──────────────────────────────────
+const Color _kSidebarBg = Color(0xFF111827);
+const Color _kSidebarBorder = Color(0xFF1F2937);
+const Color _kSidebarHeaderBorder = Color(0xFF374151);
+const Color _kSidebarSelectedBg = Color(0x333B82F6);
+const Color _kSidebarSelectedIcon = Color(0xFF93C5FD);
+const Color _kSidebarSelectedText = Colors.white;
+const Color _kSidebarInactiveIcon = Color(0xFF9CA3AF);
+const Color _kSidebarInactiveText = Color(0xFFD1D5DB);
+const Color _kSidebarUserBg = Color(0xFF1F2937);
+const Color _kSidebarSubtext = Color(0xFF6B7280);
+
 class _ShellItem {
   final IconData icon;
   final String title;
@@ -241,25 +253,32 @@ class _MainShellState extends State<MainShell> {
   Widget _buildDesktopLayout() {
     final items = _visibleItems;
     final index = _safeIndex(items);
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Row(
+      body: Column(
         children: [
-          _Sidebar(
-            selectedIndex: index,
-            items: items,
-            onTap: _select,
-            onLogout: _logout,
+          _TopBar(
             onSearch: () => _abrirBusqueda(desktop: true),
-            colorScheme: cs,
+            onLogout: _logout,
           ),
           Expanded(
-            child: items.isEmpty
-                ? const Center(child: Text('Sin módulos disponibles'))
-                : IndexedStack(
-                    index: index,
-                    children: [for (final item in items) item.builder()],
-                  ),
+            child: Row(
+              children: [
+                _Sidebar(
+                  selectedIndex: index,
+                  items: items,
+                  onTap: _select,
+                  onLogout: _logout,
+                ),
+                Expanded(
+                  child: items.isEmpty
+                      ? const Center(child: Text('Sin módulos disponibles'))
+                      : IndexedStack(
+                          index: index,
+                          children: [for (final item in items) item.builder()],
+                        ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -309,7 +328,7 @@ class _MainShellState extends State<MainShell> {
         ],
       ),
       drawer: Drawer(
-        backgroundColor: cs.surfaceContainerLow,
+        backgroundColor: _kSidebarBg,
         width: 260,
         child: _SidebarContent(
           selectedIndex: index,
@@ -319,8 +338,6 @@ class _MainShellState extends State<MainShell> {
             _select(i);
           },
           onLogout: _logout,
-          onSearch: () => _abrirBusqueda(desktop: false),
-          colorScheme: cs,
         ),
       ),
       body: items.isEmpty
@@ -356,33 +373,27 @@ class _Sidebar extends StatelessWidget {
   final List<_ShellItem> items;
   final ValueChanged<int> onTap;
   final VoidCallback onLogout;
-  final VoidCallback onSearch;
-  final ColorScheme colorScheme;
 
   const _Sidebar({
     required this.selectedIndex,
     required this.items,
     required this.onTap,
     required this.onLogout,
-    required this.onSearch,
-    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 230,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
-        border: Border(right: BorderSide(color: colorScheme.outlineVariant)),
+      decoration: const BoxDecoration(
+        color: _kSidebarBg,
+        border: Border(right: BorderSide(color: _kSidebarBorder)),
       ),
       child: _SidebarContent(
         selectedIndex: selectedIndex,
         items: items,
         onTap: onTap,
         onLogout: onLogout,
-        onSearch: onSearch,
-        colorScheme: colorScheme,
       ),
     );
   }
@@ -393,31 +404,27 @@ class _SidebarContent extends StatelessWidget {
   final List<_ShellItem> items;
   final ValueChanged<int> onTap;
   final VoidCallback onLogout;
-  final VoidCallback onSearch;
-  final ColorScheme colorScheme;
 
   const _SidebarContent({
     required this.selectedIndex,
     required this.items,
     required this.onTap,
     required this.onLogout,
-    required this.onSearch,
-    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
     final branding = BrandingService.instance;
     final logoPath = branding.logoPath;
-    final cs = colorScheme;
 
     return Column(
       children: [
+        // ── Encabezado (logo + nombre del negocio) ────────────────────────────
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: cs.outlineVariant)),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: _kSidebarHeaderBorder)),
           ),
           child: Column(
             children: [
@@ -433,21 +440,22 @@ class _SidebarContent extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: cs.primary,
+                      color: const Color(0xFF3B82F6),
                       width: 1.5,
                     ),
+                    color: const Color(0xFF1E3A5F),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.store_rounded,
-                    color: cs.primary,
+                    color: Color(0xFF93C5FD),
                     size: 28,
                   ),
                 ),
               const SizedBox(height: 8),
               Text(
                 branding.nombre,
-                style: TextStyle(
-                  color: cs.onSurface,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -457,20 +465,15 @@ class _SidebarContent extends StatelessWidget {
               if (branding.slogan.isNotEmpty)
                 Text(
                   branding.slogan,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                  style: const TextStyle(color: _kSidebarSubtext, fontSize: 11),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: onSearch,
-                icon: const Icon(Icons.search_rounded),
-                label: const Text('Búsqueda global'),
-              ),
             ],
           ),
         ),
+        // ── Ítems de navegación ───────────────────────────────────────────────
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -481,20 +484,20 @@ class _SidebarContent extends StatelessWidget {
               return Container(
                 margin: const EdgeInsets.symmetric(vertical: 2),
                 decoration: BoxDecoration(
-                  color: selected ? cs.primaryContainer : Colors.transparent,
+                  color: selected ? _kSidebarSelectedBg : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: ListTile(
                   dense: true,
                   leading: Icon(
                     item.icon,
-                    color: selected ? cs.primary : cs.onSurfaceVariant,
+                    color: selected ? _kSidebarSelectedIcon : _kSidebarInactiveIcon,
                     size: 20,
                   ),
                   title: Text(
                     item.title,
                     style: TextStyle(
-                      color: selected ? cs.onPrimaryContainer : cs.onSurface,
+                      color: selected ? _kSidebarSelectedText : _kSidebarInactiveText,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
                       fontSize: 14,
                     ),
@@ -505,24 +508,25 @@ class _SidebarContent extends StatelessWidget {
             },
           ),
         ),
+        // ── Usuario logueado ──────────────────────────────────────────────────
         Container(
           margin: const EdgeInsets.all(10),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: cs.surfaceContainerLow,
+            color: _kSidebarUserBg,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor: cs.primaryContainer,
+                backgroundColor: const Color(0xFF1E3A5F),
                 child: Text(
                   (AuthService.instance.currentUser?.nombre ?? 'A')
                       .substring(0, 1)
                       .toUpperCase(),
-                  style: TextStyle(
-                    color: cs.onPrimaryContainer,
+                  style: const TextStyle(
+                    color: Color(0xFF93C5FD),
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -536,8 +540,8 @@ class _SidebarContent extends StatelessWidget {
                   children: [
                     Text(
                       AuthService.instance.currentUser?.nombre ?? 'Usuario',
-                      style: TextStyle(
-                        color: cs.onSurface,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -545,15 +549,15 @@ class _SidebarContent extends StatelessWidget {
                     ),
                     Text(
                       AuthService.instance.currentUser?.rol ?? '',
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                      style: const TextStyle(color: _kSidebarSubtext, fontSize: 11),
                     ),
                   ],
                 ),
               ),
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.logout_rounded,
-                  color: cs.onSurfaceVariant,
+                  color: _kSidebarInactiveIcon,
                   size: 20,
                 ),
                 tooltip: 'Cerrar sesión',
@@ -565,6 +569,112 @@ class _SidebarContent extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Barra superior de escritorio ─────────────────────────────────────────────
+class _TopBar extends StatelessWidget {
+  final VoidCallback onSearch;
+  final VoidCallback onLogout;
+
+  const _TopBar({required this.onSearch, required this.onLogout});
+
+  @override
+  Widget build(BuildContext context) {
+    final branding = BrandingService.instance;
+    final logoPath = branding.logoPath;
+    final userName = AuthService.instance.currentUser?.nombre ?? 'Usuario';
+    final userInitial = userName.substring(0, 1).toUpperCase();
+
+    return Container(
+      height: 56,
+      color: _kSidebarBg,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: _kSidebarBorder)),
+      ),
+      child: Row(
+        children: [
+          // Logo / nombre del negocio
+          if (logoPath.isNotEmpty)
+            CircleAvatar(
+              radius: 16,
+              backgroundImage: FileImage(File(logoPath)),
+            )
+          else
+            const Icon(Icons.store_rounded, color: Color(0xFF93C5FD), size: 22),
+          const SizedBox(width: 10),
+          Text(
+            branding.nombre,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+          const Spacer(),
+          // Buscador global
+          GestureDetector(
+            onTap: onSearch,
+            child: Container(
+              height: 34,
+              width: 220,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1F2937),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _kSidebarHeaderBorder),
+              ),
+              child: const Row(
+                children: [
+                  SizedBox(width: 10),
+                  Icon(Icons.search_rounded, color: _kSidebarInactiveIcon, size: 17),
+                  SizedBox(width: 8),
+                  Text(
+                    'Buscar productos...',
+                    style: TextStyle(color: _kSidebarSubtext, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Notificaciones (placeholder)
+          IconButton(
+            icon: const Icon(Icons.notifications_rounded),
+            color: _kSidebarInactiveIcon,
+            tooltip: 'Notificaciones',
+            onPressed: () {},
+          ),
+          const SizedBox(width: 4),
+          // Usuario
+          CircleAvatar(
+            radius: 15,
+            backgroundColor: const Color(0xFF1E3A5F),
+            child: Text(
+              userInitial,
+              style: const TextStyle(
+                color: Color(0xFF93C5FD),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            userName,
+            style: const TextStyle(color: _kSidebarInactiveText, fontSize: 13),
+          ),
+          const SizedBox(width: 8),
+          // Cerrar sesión
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            color: _kSidebarInactiveIcon,
+            tooltip: 'Cerrar sesión',
+            onPressed: onLogout,
+          ),
+        ],
+      ),
     );
   }
 }

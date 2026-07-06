@@ -229,23 +229,29 @@ class _ComparacionPageState extends State<ComparacionPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Comparador de Costos"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.upload_file_rounded),
-            tooltip: 'Cargar lista CSV',
-            onPressed: analizarNuevaLista,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Actualizar',
-            onPressed: cargar,
-          ),
-        ],
-      ),
+      // Mostrar AppBar con botón Atrás solo cuando la página es una ruta apilada
+      // (ej: abierta desde Centro de Importaciones). En el shell, el AppBar es
+      // el de la barra superior del sistema.
+      appBar: canPop
+          ? AppBar(
+              title: const Text("Comparador de Costos"),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.upload_file_rounded),
+                  tooltip: 'Cargar lista CSV',
+                  onPressed: analizarNuevaLista,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh_rounded),
+                  tooltip: 'Actualizar',
+                  onPressed: cargar,
+                ),
+              ],
+            )
+          : null,
       floatingActionButton: lista.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: actualizarCostos,
@@ -255,6 +261,31 @@ class _ComparacionPageState extends State<ComparacionPage> {
           : null,
       body: Column(
         children: [
+          // Barra de acciones inline (visible solo cuando NO hay AppBar propio)
+          if (!canPop)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+              child: Row(
+                children: [
+                  Text(
+                    'Comparador de Costos',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.upload_file_rounded),
+                    tooltip: 'Cargar lista CSV',
+                    onPressed: analizarNuevaLista,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh_rounded),
+                    tooltip: 'Actualizar',
+                    onPressed: cargar,
+                  ),
+                ],
+              ),
+            ),
           // Header con proveedor actual
           if (lista.isNotEmpty)
             Padding(

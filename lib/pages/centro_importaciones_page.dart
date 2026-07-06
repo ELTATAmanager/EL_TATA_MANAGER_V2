@@ -36,9 +36,10 @@ class CentroImportacionesPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Centro de Importaciones'),
-      ),
+      // AppBar solo cuando es abierta como ruta apilada (ej: desde un acceso directo)
+      appBar: ModalRoute.of(context)?.canPop == true
+          ? AppBar(title: const Text('Centro de Importaciones'))
+          : null,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
