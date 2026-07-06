@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/branding_service.dart';
 import '../services/csv_service.dart';
+import '../theme/app_visuals.dart';
 import 'backup_page.dart';
 import 'clientes_page.dart';
 import 'comparacion_page.dart';
@@ -76,54 +77,56 @@ class _InicioPageState extends State<InicioPage> {
     );
   }
 
-  List<_ModuleConfig> _buildModules() {
+  List<_ModuleConfig> _buildModules(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return [
       _ModuleConfig(
-        icon: Icons.inventory,
+        icon: Icons.inventory_2_rounded,
         title: "Productos",
-        color: Colors.blue,
+        color: AppVisuals.primaryAccent(colorScheme),
         onTap: () => _abrirPagina(const ProductosPage()),
       ),
       _ModuleConfig(
-        icon: Icons.business,
+        icon: Icons.local_shipping_rounded,
         title: "Proveedores",
-        color: Colors.teal,
+        color: AppVisuals.info(colorScheme),
         onTap: () => _abrirPagina(const ProveedoresPage()),
       ),
       _ModuleConfig(
-        icon: Icons.people,
+        icon: Icons.groups_rounded,
         title: "Clientes",
-        color: Colors.purple,
+        color: AppVisuals.secondaryAccent(colorScheme),
         onTap: () => _abrirPagina(const ClientesPage()),
       ),
       _ModuleConfig(
-        icon: Icons.receipt,
+        icon: Icons.description_rounded,
         title: "Remitos",
-        color: Colors.orange,
+        color: AppVisuals.warning(colorScheme),
         onTap: () => _abrirPagina(const RemitosPage()),
       ),
       _ModuleConfig(
-        icon: Icons.inventory_2,
+        icon: Icons.warehouse_rounded,
         title: "Stock",
-        color: Colors.green,
+        color: AppVisuals.success(colorScheme),
         onTap: () => _abrirPagina(const StockPage()),
       ),
       _ModuleConfig(
-        icon: Icons.dashboard,
+        icon: Icons.query_stats_rounded,
         title: "Dashboard",
-        color: Colors.indigo,
+        color: AppVisuals.tertiaryAccent(colorScheme),
         onTap: () => _abrirPagina(const DashboardPage()),
       ),
       _ModuleConfig(
-        icon: Icons.backup,
+        icon: Icons.cloud_upload_rounded,
         title: "Respaldo",
-        color: Colors.grey,
+        color: AppVisuals.neutral(colorScheme),
         onTap: () => _abrirPagina(const BackupPage()),
       ),
       _ModuleConfig(
-        icon: Icons.settings,
+        icon: Icons.tune_rounded,
         title: "Configuración",
-        color: Colors.grey,
+        color: AppVisuals.primaryAccent(colorScheme),
         onTap: () => _abrirPagina(const ConfiguracionPage()),
       ),
     ];
@@ -153,7 +156,9 @@ class _InicioPageState extends State<InicioPage> {
   }
 
   Widget _buildHomeContent({required int crossAxisCount}) {
-    final modules = _buildModules();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final modules = _buildModules(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -170,15 +175,14 @@ class _InicioPageState extends State<InicioPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.store,
-                        color: Colors.orange,
+                        Icons.storefront_rounded,
+                        color: colorScheme.primary,
                         size: 64,
                       ),
                       const SizedBox(height: 14),
                       Text(
                         BrandingService.instance.nombre,
-                        style: const TextStyle(
-                          fontSize: 24,
+                        style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -186,6 +190,9 @@ class _InicioPageState extends State<InicioPage> {
                       Text(
                         BrandingService.instance.slogan,
                         textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 28),
                       SizedBox(
@@ -204,10 +211,9 @@ class _InicioPageState extends State<InicioPage> {
                 ),
               ),
               const SizedBox(height: 30),
-              const Text(
+              Text(
                 "MÓDULOS",
-                style: TextStyle(
-                  fontSize: 18,
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -243,11 +249,11 @@ class _InicioPageState extends State<InicioPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("EL TATA Manager"),
+      title: Text(BrandingService.instance.nombre),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.dashboard),
+          icon: const Icon(Icons.query_stats_rounded),
             tooltip: "Dashboard",
             onPressed: () {
               _abrirPagina(const DashboardPage());
@@ -268,32 +274,32 @@ class _InicioPageState extends State<InicioPage> {
                   destinations: const [
                     NavigationRailDestination(
                       icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home),
+                      selectedIcon: Icon(Icons.home_rounded),
                       label: Text('Inicio'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.inventory_2_outlined),
-                      selectedIcon: Icon(Icons.inventory_2),
+                      selectedIcon: Icon(Icons.inventory_2_rounded),
                       label: Text('Productos'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.people_outline),
-                      selectedIcon: Icon(Icons.people),
+                      icon: Icon(Icons.groups_outlined),
+                      selectedIcon: Icon(Icons.groups_rounded),
                       label: Text('Clientes'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.receipt_long_outlined),
-                      selectedIcon: Icon(Icons.receipt_long),
+                      icon: Icon(Icons.description_outlined),
+                      selectedIcon: Icon(Icons.description_rounded),
                       label: Text('Remitos'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.dashboard_outlined),
-                      selectedIcon: Icon(Icons.dashboard),
+                      icon: Icon(Icons.query_stats_outlined),
+                      selectedIcon: Icon(Icons.query_stats_rounded),
                       label: Text('Dashboard'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.settings_outlined),
-                      selectedIcon: Icon(Icons.settings),
+                      icon: Icon(Icons.tune_outlined),
+                      selectedIcon: Icon(Icons.tune_rounded),
                       label: Text('Config'),
                     ),
                   ],
@@ -335,7 +341,7 @@ class _ModuleCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.onTap,
-    this.color = Colors.orange,
+    required this.color,
   });
 
   @override
@@ -359,9 +365,8 @@ class _ModuleCard extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
                 ),
               ),
             ],

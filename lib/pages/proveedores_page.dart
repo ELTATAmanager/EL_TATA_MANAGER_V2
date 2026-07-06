@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/proveedor.dart';
 import '../services/proveedor_service.dart';
+import '../theme/app_visuals.dart';
 import 'proveedor_form_page.dart';
 
 class ProveedoresPage extends StatefulWidget {
@@ -61,6 +62,8 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Proveedores"),
@@ -114,7 +117,11 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
                               child: ListTile(
                                 leading: CircleAvatar(
                                   radius: 28,
-                                  child: const Icon(Icons.business),
+                                  backgroundColor: colorScheme.primaryContainer,
+                                  child: Icon(
+                                    Icons.local_shipping_rounded,
+                                    color: colorScheme.primary,
+                                  ),
                                 ),
                                 title: Text(
                                   p.nombre,
@@ -132,8 +139,8 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
                                       "Estado: ${p.activo ? "Activo" : "Inactivo"}",
                                       style: TextStyle(
                                         color: p.activo
-                                            ? Colors.green
-                                            : Colors.red,
+                                            ? AppVisuals.success(colorScheme)
+                                            : AppVisuals.danger(colorScheme),
                                       ),
                                     ),
                                   ],

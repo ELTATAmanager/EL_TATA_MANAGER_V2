@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/cliente.dart';
 import '../services/cliente_service.dart';
+import '../theme/app_visuals.dart';
 import 'cliente_form_page.dart';
 import 'cliente_historial_page.dart';
 
@@ -45,6 +46,8 @@ class _ClientesPageState extends State<ClientesPage> {
   }
 
   Future<void> confirmarEliminar(Cliente cliente) async {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -57,7 +60,12 @@ class _ClientesPageState extends State<ClientesPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
+            child: Text(
+              "Eliminar",
+              style: TextStyle(
+                color: AppVisuals.danger(colorScheme),
+              ),
+            ),
           ),
         ],
       ),
@@ -80,6 +88,8 @@ class _ClientesPageState extends State<ClientesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Clientes"),
@@ -131,13 +141,13 @@ class _ClientesPageState extends State<ClientesPage> {
                             child: ListTile(
                               onTap: () => abrirHistorial(c),
                               leading: CircleAvatar(
-                                backgroundColor: Colors.orange,
+                                backgroundColor: colorScheme.primaryContainer,
                                 child: Text(
                                   c.nombre.isNotEmpty
                                       ? c.nombre[0].toUpperCase()
                                       : '?',
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: colorScheme.onPrimaryContainer,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -154,7 +164,7 @@ class _ClientesPageState extends State<ClientesPage> {
                                     Row(
                                       children: [
                                         const Icon(Icons.phone,
-                                            size: 14, color: Colors.grey),
+                                             size: 14),
                                         const SizedBox(width: 4),
                                         Text(c.telefono),
                                       ],
@@ -163,7 +173,7 @@ class _ClientesPageState extends State<ClientesPage> {
                                     Row(
                                       children: [
                                         const Icon(Icons.location_on,
-                                            size: 14, color: Colors.grey),
+                                             size: 14),
                                         const SizedBox(width: 4),
                                         Expanded(child: Text(c.direccion)),
                                       ],
@@ -174,13 +184,17 @@ class _ClientesPageState extends State<ClientesPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.history,
-                                        color: Colors.orange),
+                                    icon: Icon(
+                                      Icons.history_rounded,
+                                      color: colorScheme.primary,
+                                    ),
                                     onPressed: () => abrirHistorial(c),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.edit,
-                                        color: Colors.orange),
+                                    icon: Icon(
+                                      Icons.edit_rounded,
+                                      color: colorScheme.primary,
+                                    ),
                                     onPressed: () async {
                                       await Navigator.push(
                                         context,
@@ -193,8 +207,10 @@ class _ClientesPageState extends State<ClientesPage> {
                                     },
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.red),
+                                    icon: Icon(
+                                      Icons.delete_rounded,
+                                      color: AppVisuals.danger(colorScheme),
+                                    ),
                                     onPressed: () => confirmarEliminar(c),
                                   ),
                                 ],

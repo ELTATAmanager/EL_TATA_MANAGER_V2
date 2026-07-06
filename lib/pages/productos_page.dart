@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/producto.dart';
 import '../services/producto_service.dart';
+import '../theme/app_visuals.dart';
 import 'producto_form_page.dart';
 import 'scanner_page.dart';
 
@@ -77,9 +78,11 @@ class _ProductosPageState extends State<ProductosPage> {
   }
 
   Color _stockColor(int stock) {
-    if (stock > 10) return Colors.green;
-    if (stock > 0) return Colors.orange;
-    return Colors.red;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (stock > 10) return AppVisuals.success(colorScheme);
+    if (stock > 0) return AppVisuals.warning(colorScheme);
+    return AppVisuals.danger(colorScheme);
   }
 
   String _lineaPrecios(Producto producto) {
@@ -106,6 +109,8 @@ class _ProductosPageState extends State<ProductosPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Productos"),
@@ -161,7 +166,11 @@ class _ProductosPageState extends State<ProductosPage> {
                         child: ListTile(
                           leading: CircleAvatar(
                             radius: 28,
-                            child: const Icon(Icons.inventory),
+                            backgroundColor: colorScheme.primaryContainer,
+                            child: Icon(
+                              Icons.inventory_2_rounded,
+                              color: colorScheme.primary,
+                            ),
                           ),
                           title: Text(
                             p.descripcion,
@@ -208,12 +217,18 @@ class _ProductosPageState extends State<ProductosPage> {
                                   children: [
                                     IconButton(
                                       visualDensity: VisualDensity.compact,
-                                      icon: const Icon(Icons.edit),
+                                      icon: Icon(
+                                        Icons.edit_rounded,
+                                        color: colorScheme.primary,
+                                      ),
                                       onPressed: () => _editarProducto(p),
                                     ),
                                     IconButton(
                                       visualDensity: VisualDensity.compact,
-                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      icon: Icon(
+                                        Icons.delete_rounded,
+                                        color: AppVisuals.danger(colorScheme),
+                                      ),
                                       onPressed: () => eliminar(p),
                                     ),
                                   ],

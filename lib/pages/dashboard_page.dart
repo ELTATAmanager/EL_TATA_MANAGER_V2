@@ -4,6 +4,7 @@ import '../models/producto.dart';
 import '../services/cliente_service.dart';
 import '../services/producto_service.dart';
 import '../services/remito_service.dart';
+import '../theme/app_visuals.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -70,6 +71,8 @@ class _DashboardPageState extends State<DashboardPage> {
     required IconData icono,
     required Color color,
   }) {
+    final labelColor = Theme.of(context).colorScheme.onSurfaceVariant;
+
     return Card(
       elevation: 3,
       child: Padding(
@@ -88,9 +91,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 Expanded(
                   child: Text(
                     titulo,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey,
+                      color: labelColor,
                     ),
                   ),
                 ),
@@ -142,6 +145,17 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final productosColor = AppVisuals.primaryAccent(colorScheme);
+    final clientesColor = AppVisuals.secondaryAccent(colorScheme);
+    final remitosColor = AppVisuals.info(colorScheme);
+    final ventasColor = AppVisuals.success(colorScheme);
+    final stockColor = AppVisuals.warning(colorScheme);
+    final topProductosColor = AppVisuals.tertiaryAccent(colorScheme);
+    final topClientesColor = AppVisuals.info(colorScheme);
+    final sinStockColor = AppVisuals.danger(colorScheme);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Dashboard"),
@@ -159,10 +173,9 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "Resumen general",
-                    style: TextStyle(
-                      fontSize: 18,
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -178,26 +191,26 @@ class _DashboardPageState extends State<DashboardPage> {
                       _statCard(
                         titulo: "Productos",
                         valor: "$totalProductos",
-                        icono: Icons.inventory,
-                        color: Colors.blue,
+                        icono: Icons.inventory_2_rounded,
+                        color: productosColor,
                       ),
                       _statCard(
                         titulo: "Clientes",
                         valor: "$totalClientes",
-                        icono: Icons.people,
-                        color: Colors.purple,
+                        icono: Icons.groups_rounded,
+                        color: clientesColor,
                       ),
                       _statCard(
                         titulo: "Remitos",
                         valor: "$totalRemitos",
-                        icono: Icons.receipt,
-                        color: Colors.teal,
+                        icono: Icons.description_rounded,
+                        color: remitosColor,
                       ),
                       _statCard(
                         titulo: "Total ventas",
                         valor: "\$${totalVentas.toStringAsFixed(0)}",
-                        icono: Icons.attach_money,
-                        color: Colors.green,
+                        icono: Icons.payments_rounded,
+                        color: ventasColor,
                       ),
                     ],
                   ),
@@ -205,27 +218,26 @@ class _DashboardPageState extends State<DashboardPage> {
                   Card(
                     elevation: 3,
                     child: ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0x26FF9800),
-                        child: Icon(Icons.warehouse, color: Colors.orange),
+                      leading: CircleAvatar(
+                        backgroundColor: stockColor.withValues(alpha: .15),
+                        child: Icon(Icons.warehouse_rounded, color: stockColor),
                       ),
                       title: const Text("Valor del stock"),
                       subtitle: const Text("Precio de venta × cantidad"),
                       trailing: Text(
                         "\$${valorStock.toStringAsFixed(0)}",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
-                          color: Colors.orange,
+                          color: stockColor,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     "Top 5 productos más vendidos",
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -245,15 +257,14 @@ class _DashboardPageState extends State<DashboardPage> {
                             '${((producto['totalVendido'] as num?)?.toInt() ?? 0)} unidades vendidas',
                         valor:
                             '\$${((producto['totalMonto'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}',
-                        icono: Icons.inventory_2,
-                        color: Colors.deepOrange,
+                        icono: Icons.sell_rounded,
+                        color: topProductosColor,
                       ),
                     ),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     "Top 5 clientes",
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -272,16 +283,15 @@ class _DashboardPageState extends State<DashboardPage> {
                             '${((cliente['cantidadRemitos'] as num?)?.toInt() ?? 0)} remitos',
                         valor:
                             '\$${((cliente['totalCompras'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}',
-                        icono: Icons.people,
-                        color: Colors.indigo,
+                        icono: Icons.workspace_premium_rounded,
+                        color: topClientesColor,
                       ),
                     ),
                   if (sinStock.isNotEmpty) ...[
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       "Productos sin stock",
-                      style: TextStyle(
-                        fontSize: 16,
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -289,16 +299,19 @@ class _DashboardPageState extends State<DashboardPage> {
                     ...sinStock.map(
                       (p) => Card(
                         child: ListTile(
-                          leading: const CircleAvatar(
-                            backgroundColor: Color(0x26F44336),
-                            child: Icon(Icons.warning, color: Colors.red),
+                          leading: CircleAvatar(
+                            backgroundColor: sinStockColor.withValues(alpha: .15),
+                            child: Icon(
+                              Icons.warning_amber_rounded,
+                              color: sinStockColor,
+                            ),
                           ),
                           title: Text(p.descripcion),
                           subtitle: Text(p.codigo),
-                          trailing: const Text(
+                          trailing: Text(
                             "SIN STOCK",
                             style: TextStyle(
-                              color: Colors.red,
+                              color: sinStockColor,
                               fontWeight: FontWeight.bold,
                               fontSize: 11,
                             ),

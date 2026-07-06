@@ -4,6 +4,7 @@ import '../models/movimiento_stock.dart';
 import '../models/producto.dart';
 import '../services/producto_service.dart';
 import '../services/stock_service.dart';
+import '../theme/app_visuals.dart';
 
 class StockPage extends StatefulWidget {
   const StockPage({super.key});
@@ -60,16 +61,18 @@ class _StockPageState extends State<StockPage> {
   }
 
   Color colorTipo(String tipo) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     switch (tipo) {
       case 'entrada':
-        return Colors.green;
+        return AppVisuals.success(colorScheme);
       case 'salida':
       case 'reversion':
-        return Colors.red;
+        return AppVisuals.danger(colorScheme);
       case 'ajuste':
-        return Colors.orange;
+        return AppVisuals.warning(colorScheme);
       default:
-        return Colors.grey;
+        return AppVisuals.neutral(colorScheme);
     }
   }
 
@@ -105,7 +108,7 @@ class _StockPageState extends State<StockPage> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: Theme.of(ctx).colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -251,8 +254,8 @@ class _StockPageState extends State<StockPage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Stock'),
-          bottom: const TabBar(
-            indicatorColor: Colors.orange,
+          bottom: TabBar(
+            indicatorColor: Theme.of(context).colorScheme.primary,
             tabs: [
               Tab(text: 'Movimientos'),
               Tab(text: 'Alertas'),
@@ -306,7 +309,7 @@ class _StockPageState extends State<StockPage> {
                                           movimiento['tipo'] ?? '',
                                         ).withValues(alpha: .15),
                                         child: Icon(
-                                          Icons.swap_vert,
+                                          Icons.sync_alt_rounded,
                                           color: colorTipo(
                                             movimiento['tipo'] ?? '',
                                           ),
@@ -360,12 +363,16 @@ class _StockPageState extends State<StockPage> {
                               ),
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: Colors.orange.withValues(
+                                  backgroundColor: AppVisuals.warning(
+                                    Theme.of(context).colorScheme,
+                                  ).withValues(
                                     alpha: .15,
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.warning_amber_rounded,
-                                    color: Colors.orange,
+                                    color: AppVisuals.warning(
+                                      Theme.of(context).colorScheme,
+                                    ),
                                   ),
                                 ),
                                 title: Text(
@@ -376,14 +383,20 @@ class _StockPageState extends State<StockPage> {
                                 ),
                                 subtitle: Text(
                                   'Stock actual: ${producto.stock}',
-                                  style: const TextStyle(color: Colors.red),
+                                  style: TextStyle(
+                                    color: AppVisuals.danger(
+                                      Theme.of(context).colorScheme,
+                                    ),
+                                  ),
                                 ),
                                 trailing: TextButton.icon(
                                   onPressed: () => registrarMovimiento(
                                     productoInicial: producto,
                                   ),
-                                  icon: const Icon(Icons.add_circle,
-                                      color: Colors.orange),
+                                  icon: Icon(
+                                    Icons.add_circle_rounded,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
                                   label: const Text('Entrada'),
                                 ),
                               ),

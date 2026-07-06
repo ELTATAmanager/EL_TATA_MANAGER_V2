@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../services/pdf_service.dart';
 import '../services/remito_service.dart';
+import '../theme/app_visuals.dart';
 import 'remito_form_page.dart';
 
 class RemitosPage extends StatefulWidget {
@@ -75,7 +76,7 @@ class _RemitosPageState extends State<RemitosPage> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: Theme.of(context).colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -83,7 +84,10 @@ class _RemitosPageState extends State<RemitosPage> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Icon(Icons.receipt_long, color: Colors.orange),
+                  Icon(
+                    Icons.description_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Remito ${remito['numero']}',
@@ -140,10 +144,10 @@ class _RemitosPageState extends State<RemitosPage> {
                   ),
                   Text(
                     '\$${(remito['total'] as num).toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
-                      color: Colors.orange,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ],
@@ -200,7 +204,12 @@ class _RemitosPageState extends State<RemitosPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Anular', style: TextStyle(color: Colors.orange)),
+            child: Text(
+              'Anular',
+              style: TextStyle(
+                color: AppVisuals.danger(Theme.of(context).colorScheme),
+              ),
+            ),
           ),
         ],
       ),
@@ -235,24 +244,39 @@ class _RemitosPageState extends State<RemitosPage> {
   }
 
   Color colorEstado(String estado) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     switch (estado) {
       case 'confirmado':
-        return Colors.green;
+        return AppVisuals.success(colorScheme);
       case 'anulado':
-        return Colors.red;
+        return AppVisuals.danger(colorScheme);
       default:
-        return Colors.orange;
+        return AppVisuals.warning(colorScheme);
     }
   }
 
   Color colorEstadoPago(String estadoPago) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     switch (estadoPago) {
       case 'cobrado':
-        return Colors.green;
+        return AppVisuals.success(colorScheme);
       case 'parcial':
-        return Colors.blue;
+        return AppVisuals.info(colorScheme);
       default:
-        return Colors.orange;
+        return AppVisuals.warning(colorScheme);
+    }
+  }
+
+  IconData iconoEstado(String estado) {
+    switch (estado) {
+      case 'confirmado':
+        return Icons.verified_rounded;
+      case 'anulado':
+        return Icons.block_rounded;
+      default:
+        return Icons.schedule_rounded;
     }
   }
 
@@ -362,7 +386,7 @@ class _RemitosPageState extends State<RemitosPage> {
                                           backgroundColor: colorEstado(estado)
                                               .withValues(alpha: .15),
                                           child: Icon(
-                                            Icons.receipt,
+                                            iconoEstado(estado),
                                             color: colorEstado(estado),
                                           ),
                                         ),
@@ -388,9 +412,11 @@ class _RemitosPageState extends State<RemitosPage> {
                                                 formatearFecha(
                                                   remito['fecha']?.toString(),
                                                 ),
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.grey,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
                                                 ),
                                               ),
                                             ],
@@ -458,16 +484,14 @@ class _RemitosPageState extends State<RemitosPage> {
                                           tooltip: 'Imprimir PDF',
                                           onPressed: () => imprimirRemito(remito),
                                           icon: const Icon(
-                                            Icons.picture_as_pdf,
-                                            color: Colors.orange,
+                                            Icons.picture_as_pdf_rounded,
                                           ),
                                         ),
                                         IconButton(
                                           tooltip: 'Compartir PDF',
                                           onPressed: () => compartirRemito(remito),
                                           icon: const Icon(
-                                            Icons.share,
-                                            color: Colors.orange,
+                                            Icons.share_rounded,
                                           ),
                                         ),
                                       ],

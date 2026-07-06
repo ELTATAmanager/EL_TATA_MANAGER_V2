@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/comparacion.dart';
 import '../services/comparador_service.dart';
 import '../services/csv_service.dart';
+import '../theme/app_visuals.dart';
 
 class ComparacionPage extends StatefulWidget {
   const ComparacionPage({super.key});
@@ -54,32 +55,34 @@ class _ComparacionPageState extends State<ComparacionPage> {
   }
 
   Color colorEstado(String estado) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     switch (estado) {
       case "SUBIO":
-        return Colors.red;
+        return AppVisuals.danger(colorScheme);
       case "BAJO":
-        return Colors.green;
+        return AppVisuals.success(colorScheme);
       case "NUEVO":
-        return Colors.blue;
+        return AppVisuals.info(colorScheme);
       case "IGUAL":
-        return Colors.grey;
+        return AppVisuals.neutral(colorScheme);
       default:
-        return Colors.black;
+        return colorScheme.onSurfaceVariant;
     }
   }
 
   IconData iconoEstado(String estado) {
     switch (estado) {
       case "SUBIO":
-        return Icons.arrow_upward;
+        return Icons.trending_up_rounded;
       case "BAJO":
-        return Icons.arrow_downward;
+        return Icons.trending_down_rounded;
       case "NUEVO":
-        return Icons.fiber_new;
+        return Icons.new_releases_rounded;
       case "IGUAL":
-        return Icons.remove;
+        return Icons.horizontal_rule_rounded;
       default:
-        return Icons.help;
+        return Icons.help_outline_rounded;
     }
   }
 
@@ -189,6 +192,8 @@ class _ComparacionPageState extends State<ComparacionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Comparación de Precios"),
@@ -213,10 +218,10 @@ class _ComparacionPageState extends State<ComparacionPage> {
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [
-                  _statChip("SUBIO", aumentos, Colors.red),
-                  _statChip("BAJO", bajas, Colors.green),
-                  _statChip("NUEVO", nuevos, Colors.blue),
-                  _statChip("IGUAL", iguales, Colors.grey),
+                  _statChip("SUBIO", aumentos, colorEstado("SUBIO")),
+                  _statChip("BAJO", bajas, colorEstado("BAJO")),
+                  _statChip("NUEVO", nuevos, colorEstado("NUEVO")),
+                  _statChip("IGUAL", iguales, colorEstado("IGUAL")),
                 ],
               ),
             ),
@@ -227,11 +232,11 @@ class _ComparacionPageState extends State<ComparacionPage> {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Row(
               children: [
-                botonFiltro("TODOS", Colors.black),
-                botonFiltro("SUBIO", Colors.red),
-                botonFiltro("BAJO", Colors.green),
-                botonFiltro("NUEVO", Colors.blue),
-                botonFiltro("IGUAL", Colors.grey),
+                botonFiltro("TODOS", theme.colorScheme.onSurfaceVariant),
+                botonFiltro("SUBIO", colorEstado("SUBIO")),
+                botonFiltro("BAJO", colorEstado("BAJO")),
+                botonFiltro("NUEVO", colorEstado("NUEVO")),
+                botonFiltro("IGUAL", colorEstado("IGUAL")),
               ],
             ),
           ),
