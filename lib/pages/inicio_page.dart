@@ -119,7 +119,7 @@ class _InicioPageState extends State<InicioPage> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 1100;
+        final desktop = constraints.maxWidth >= 800;
 
         return Scaffold(
           backgroundColor: const Color(0xFF07090F),
