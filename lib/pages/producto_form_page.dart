@@ -3,16 +3,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models/lista_precio.dart';
 import '../models/producto.dart';
+import '../services/lista_precio_service.dart';
 import '../services/producto_service.dart';
+import 'historial_precios_page.dart';
 
 class ProductoFormPage extends StatefulWidget {
   final Producto? producto;
 
-  const ProductoFormPage({
-    super.key,
-    this.producto,
-  });
+  const ProductoFormPage({super.key, this.producto});
 
   @override
   State<ProductoFormPage> createState() => _ProductoFormPageState();
@@ -20,6 +20,9 @@ class ProductoFormPage extends StatefulWidget {
 
 class _ProductoFormPageState extends State<ProductoFormPage> {
   final service = ProductoService();
+  final ListaPrecioService listaPrecioService = ListaPrecioService();
+
+  List<ListaPrecio> listasActivas = [];
 
   final codigoController = TextEditingController();
   final descripcionController = TextEditingController();
@@ -28,13 +31,15 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
   final proveedorController = TextEditingController();
   final stockController = TextEditingController();
   final costoController = TextEditingController();
-  final margenController = TextEditingController(text: '0');
+  final margen1Controller = TextEditingController(text: '0');
+  final margen2Controller = TextEditingController(text: '0');
+  final margen3Controller = TextEditingController(text: '0');
   final precioController = TextEditingController();
   final precio2Controller = TextEditingController();
   final precio3Controller = TextEditingController();
   final observacionesController = TextEditingController();
 
-  String foto = "";
+  String foto = '';
 
   @override
   void initState() {
@@ -42,7 +47,6 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
 
     if (widget.producto != null) {
       final p = widget.producto!;
-
       codigoController.text = p.codigo;
       descripcionController.text = p.descripcion;
       marcaController.text = p.marca;
@@ -54,12 +58,25 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
       precio2Controller.text = p.precio2.toString();
       precio3Controller.text = p.precio3.toString();
       if (p.costo > 0 && p.precio > 0) {
-        margenController.text =
-            ((p.precio / p.costo - 1) * 100).toStringAsFixed(1);
+        margen1Controller.text = ((p.precio / p.costo - 1) * 100).toStringAsFixed(1);
+      }
+      if (p.costo > 0 && p.precio2 > 0) {
+        margen2Controller.text = ((p.precio2 / p.costo - 1) * 100).toStringAsFixed(1);
+      }
+      if (p.costo > 0 && p.precio3 > 0) {
+        margen3Controller.text = ((p.precio3 / p.costo - 1) * 100).toStringAsFixed(1);
       }
       observacionesController.text = p.observaciones;
       foto = p.foto;
     }
+
+    _cargarListasPrecio();
+  }
+
+  Future<void> _cargarListasPrecio() async {
+    final listas = await listaPrecioService.obtenerActivas();
+    if (!mounted) return;
+    setState(() => listasActivas = listas);
   }
 
   @override
@@ -71,7 +88,9 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
     proveedorController.dispose();
     stockController.dispose();
     costoController.dispose();
-    margenController.dispose();
+    margen1Controller.dispose();
+    margen2Controller.dispose();
+    margen3Controller.dispose();
     precioController.dispose();
     precio2Controller.dispose();
     precio3Controller.dispose();
@@ -81,24 +100,36 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
 
   Future<void> elegirFoto() async {
     final picker = ImagePicker();
-
     final imagen = await picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 70,
     );
-
     if (imagen == null) return;
-
-    setState(() {
-      foto = imagen.path;
-    });
+    setState(() => foto = imagen.path);
   }
 
-  void recalcularPrecio() {
-    final costo = double.tryParse(costoController.text.replaceAll(',', '.')) ?? 0;
-    final margen = double.tryParse(margenController.text.replaceAll(',', '.')) ?? 0;
-    final precio = costo * (1 + margen / 100);
-    precioController.text = precio.toStringAsFixed(2);
+  double _parseDbl(String text) => double.tryParse(text.replaceAll(',', '.')) ?? 0;
+
+  void _recalcularPrecio(int lista) {
+    final costo = _parseDbl(costoController.text);
+    if (costo <= 0) return;
+    switch (lista) {
+      case 1:
+        final m = _parseDbl(margen1Controller.text);
+        precioController.text = (costo * (1 + m / 100)).toStringAsFixed(2);
+      case 2:
+        final m = _parseDbl(margen2Controller.text);
+        precio2Controller.text = (costo * (1 + m / 100)).toStringAsFixed(2);
+      case 3:
+        final m = _parseDbl(margen3Controller.text);
+        precio3Controller.text = (costo * (1 + m / 100)).toStringAsFixed(2);
+    }
+  }
+
+  void _recalcularTodos() {
+    _recalcularPrecio(1);
+    _recalcularPrecio(2);
+    _recalcularPrecio(3);
   }
 
   Future<void> guardar() async {
@@ -109,12 +140,12 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
       marca: marcaController.text.trim(),
       categoria: categoriaController.text.trim(),
       proveedor: proveedorController.text.trim(),
-      ubicacion: "",
+      ubicacion: widget.producto?.ubicacion ?? '',
       stock: int.tryParse(stockController.text) ?? 0,
-      costo: double.tryParse(costoController.text.replaceAll(',', '.')) ?? 0,
-      precio: double.tryParse(precioController.text.replaceAll(',', '.')) ?? 0,
-      precio2: double.tryParse(precio2Controller.text.replaceAll(',', '.')) ?? 0,
-      precio3: double.tryParse(precio3Controller.text.replaceAll(',', '.')) ?? 0,
+      costo: _parseDbl(costoController.text),
+      precio: _parseDbl(precioController.text),
+      precio2: _parseDbl(precio2Controller.text),
+      precio3: _parseDbl(precio3Controller.text),
       observaciones: observacionesController.text.trim(),
       foto: foto,
     );
@@ -126,11 +157,10 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
     }
 
     if (!mounted) return;
-
     Navigator.pop(context);
   }
 
-  Widget campo(
+  Widget _campo(
     String titulo,
     TextEditingController controller, {
     TextInputType? keyboardType,
@@ -150,13 +180,72 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
     );
   }
 
+  Widget _campoConMargen({
+    required String labelPrecio,
+    required String labelMargen,
+    required TextEditingController precioCtrl,
+    required TextEditingController margenCtrl,
+    required int lista,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 3,
+            child: TextField(
+              controller: precioCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: labelPrecio,
+                border: const OutlineInputBorder(),
+                prefixText: '\$ ',
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 100,
+            child: TextField(
+              controller: margenCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => _recalcularPrecio(lista),
+              decoration: InputDecoration(
+                labelText: labelMargen,
+                border: const OutlineInputBorder(),
+                suffixText: '%',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.producto == null ? "Nuevo producto" : "Editar producto",
-        ),
+        title: Text(widget.producto == null ? 'Nuevo producto' : 'Editar producto'),
+        actions: [
+          if (widget.producto?.id != null)
+            IconButton(
+              icon: const Icon(Icons.history_rounded),
+              tooltip: 'Ver historial de precios',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => HistorialPreciosPage(
+                      productoId: widget.producto!.id!,
+                      productoDescripcion: widget.producto!.descripcion,
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(15),
@@ -167,49 +256,115 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
               child: CircleAvatar(
                 radius: 60,
                 backgroundImage: foto.isEmpty ? null : FileImage(File(foto)),
-                child: foto.isEmpty
-                    ? const Icon(
-                        Icons.camera_alt,
-                        size: 40,
-                      )
-                    : null,
+                child: foto.isEmpty ? const Icon(Icons.camera_alt, size: 40) : null,
               ),
             ),
             const SizedBox(height: 20),
-            campo("Código", codigoController),
-            campo("Descripción", descripcionController),
-            campo("Marca", marcaController),
-            campo("Categoría", categoriaController),
-            campo("Comprado en", proveedorController),
-            campo("Stock", stockController),
-            campo(
-              "Costo",
-              costoController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onChanged: (_) => recalcularPrecio(),
+            _campo('Código', codigoController),
+            _campo('Descripción', descripcionController),
+            _campo('Marca', marcaController),
+            _campo('Categoría', categoriaController),
+            _campo('Proveedor / Comprado en', proveedorController),
+            _campo('Stock', stockController, keyboardType: TextInputType.number),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: TextField(
+                controller: costoController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => _recalcularTodos(),
+                decoration: const InputDecoration(
+                  labelText: 'Costo',
+                  border: OutlineInputBorder(),
+                  prefixText: '\$ ',
+                ),
+              ),
             ),
-            campo(
-              "Margen (%)",
-              margenController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onChanged: (_) => recalcularPrecio(),
+            const Divider(),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Precios de venta',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
             ),
-            campo(
-              "Precio Lista 1",
-              precioController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Ingresá el % de ganancia para calcular el precio automáticamente, o escribí el precio directamente.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ),
-            campo(
-              "Precio Lista 2",
-              precio2Controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            _campoConMargen(
+              labelPrecio: 'Precio Lista 1',
+              labelMargen: 'Ganancia',
+              precioCtrl: precioController,
+              margenCtrl: margen1Controller,
+              lista: 1,
             ),
-            campo(
-              "Precio Lista 3",
-              precio3Controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            _campoConMargen(
+              labelPrecio: 'Precio Lista 2',
+              labelMargen: 'Ganancia',
+              precioCtrl: precio2Controller,
+              margenCtrl: margen2Controller,
+              lista: 2,
             ),
-            campo("Observaciones", observacionesController),
+            _campoConMargen(
+              labelPrecio: 'Precio Lista 3',
+              labelMargen: 'Ganancia',
+              precioCtrl: precio3Controller,
+              margenCtrl: margen3Controller,
+              lista: 3,
+            ),
+            const Divider(),
+            if (listasActivas.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Listas de precios dinámicas',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Calculadas automáticamente según el costo y el % configurado en Listas de Precios.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              AnimatedBuilder(
+                animation: costoController,
+                builder: (context, _) => Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: listasActivas.map((lista) {
+                    final costo = _parseDbl(costoController.text);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lista.nombre,
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          Text(
+                            '\$${lista.calcularPrecio(costo).toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const Divider(),
+            ],
+            const SizedBox(height: 8),
+            _campo('Observaciones', observacionesController),
             const SizedBox(height: 15),
             SizedBox(
               width: double.infinity,
@@ -217,7 +372,7 @@ class _ProductoFormPageState extends State<ProductoFormPage> {
               child: ElevatedButton.icon(
                 onPressed: guardar,
                 icon: const Icon(Icons.save),
-                label: const Text("GUARDAR"),
+                label: const Text('GUARDAR'),
               ),
             ),
           ],

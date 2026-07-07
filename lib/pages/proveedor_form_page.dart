@@ -20,8 +20,14 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   late TextEditingController nombreController;
+  late TextEditingController contactoController;
   late TextEditingController telefonoController;
+  late TextEditingController whatsappController;
   late TextEditingController emailController;
+  late TextEditingController webController;
+  late TextEditingController cuitController;
+  late TextEditingController condicionesComercialesController;
+  late TextEditingController tiempoEntregaController;
   late TextEditingController observacionesController;
 
   bool activo = true;
@@ -34,11 +40,29 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
     nombreController = TextEditingController(
       text: widget.proveedor?.nombre ?? '',
     );
+    contactoController = TextEditingController(
+      text: widget.proveedor?.contacto ?? '',
+    );
     telefonoController = TextEditingController(
       text: widget.proveedor?.telefono ?? '',
     );
+    whatsappController = TextEditingController(
+      text: widget.proveedor?.whatsapp ?? '',
+    );
     emailController = TextEditingController(
       text: widget.proveedor?.email ?? '',
+    );
+    webController = TextEditingController(
+      text: widget.proveedor?.web ?? '',
+    );
+    cuitController = TextEditingController(
+      text: widget.proveedor?.cuit ?? '',
+    );
+    condicionesComercialesController = TextEditingController(
+      text: widget.proveedor?.condicionesComerciales ?? '',
+    );
+    tiempoEntregaController = TextEditingController(
+      text: widget.proveedor?.tiempoEntrega ?? '',
     );
     observacionesController = TextEditingController(
       text: widget.proveedor?.observaciones ?? '',
@@ -50,8 +74,14 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
   @override
   void dispose() {
     nombreController.dispose();
+    contactoController.dispose();
     telefonoController.dispose();
+    whatsappController.dispose();
     emailController.dispose();
+    webController.dispose();
+    cuitController.dispose();
+    condicionesComercialesController.dispose();
+    tiempoEntregaController.dispose();
     observacionesController.dispose();
 
     super.dispose();
@@ -59,6 +89,8 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
 
   Future<void> guardar() async {
     if (!formKey.currentState!.validate()) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     setState(() {
       guardando = true;
@@ -68,8 +100,14 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
       final proveedor = Proveedor(
         id: widget.proveedor?.id,
         nombre: nombreController.text,
+        contacto: contactoController.text,
         telefono: telefonoController.text,
+        whatsapp: whatsappController.text,
         email: emailController.text,
+        web: webController.text,
+        cuit: cuitController.text,
+        condicionesComerciales: condicionesComercialesController.text,
+        tiempoEntrega: tiempoEntregaController.text,
         observaciones: observacionesController.text,
         fechaCreacion: widget.proveedor?.fechaCreacion,
         activo: activo,
@@ -77,7 +115,8 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
 
       if (widget.proveedor == null) {
         await service.insertar(proveedor);
-        ScaffoldMessenger.of(context).showSnackBar(
+        if (!mounted) return;
+        messenger.showSnackBar(
           const SnackBar(
             content: Text("Proveedor guardado exitosamente"),
             backgroundColor: Colors.green,
@@ -85,7 +124,8 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
         );
       } else {
         await service.actualizar(proveedor);
-        ScaffoldMessenger.of(context).showSnackBar(
+        if (!mounted) return;
+        messenger.showSnackBar(
           const SnackBar(
             content: Text("Proveedor actualizado exitosamente"),
             backgroundColor: Colors.green,
@@ -94,20 +134,46 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
       }
 
       if (!mounted) return;
-
-      Navigator.pop(context);
+      navigator.pop();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+      messenger.showSnackBar(
         SnackBar(
           content: Text("Error: $e"),
           backgroundColor: Colors.red,
         ),
       );
     } finally {
-      setState(() {
-        guardando = false;
-      });
+      if (mounted) {
+        setState(() {
+          guardando = false;
+        });
+      }
     }
+  }
+
+  Widget _campo(
+    String label,
+    TextEditingController controller, {
+    IconData? icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: icon != null ? Icon(icon) : null,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -124,13 +190,10 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
           key: formKey,
           child: Column(
             children: [
-              TextFormField(
-                controller: nombreController,
-                decoration: const InputDecoration(
-                  labelText: "Nombre del Proveedor",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.business),
-                ),
+              _campo(
+                "Nombre del Proveedor",
+                nombreController,
+                icon: Icons.business,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return "El nombre es requerido";
@@ -138,14 +201,13 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: telefonoController,
-                decoration: const InputDecoration(
-                  labelText: "Teléfono",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
-                ),
+              _campo("Persona de contacto", contactoController,
+                  icon: Icons.person_outline),
+              _campo(
+                "Teléfono",
+                telefonoController,
+                icon: Icons.phone,
+                keyboardType: TextInputType.phone,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return "El teléfono es requerido";
@@ -153,14 +215,12 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
+              _campo("WhatsApp", whatsappController,
+                  icon: Icons.chat, keyboardType: TextInputType.phone),
+              _campo(
+                "Email",
+                emailController,
+                icon: Icons.email,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -172,16 +232,18 @@ class _ProveedorFormPageState extends State<ProveedorFormPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: observacionesController,
-                decoration: const InputDecoration(
-                  labelText: "Observaciones",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.note),
-                ),
-                maxLines: 3,
+              _campo("Sitio web", webController, icon: Icons.language),
+              _campo("CUIT", cuitController, icon: Icons.badge),
+              _campo(
+                "Condiciones comerciales",
+                condicionesComercialesController,
+                icon: Icons.handshake_outlined,
+                maxLines: 2,
               ),
+              _campo("Tiempo de entrega", tiempoEntregaController,
+                  icon: Icons.local_shipping_outlined),
+              _campo("Observaciones", observacionesController,
+                  icon: Icons.note, maxLines: 3),
               const SizedBox(height: 16),
               CheckboxListTile(
                 title: const Text("Proveedor Activo"),

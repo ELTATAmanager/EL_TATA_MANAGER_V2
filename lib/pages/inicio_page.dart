@@ -1,17 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
+import '../models/producto.dart';
+import '../services/auth_service.dart';
 import '../services/branding_service.dart';
-import '../services/csv_service.dart';
-import '../theme/app_visuals.dart';
-import 'backup_page.dart';
-import 'clientes_page.dart';
-import 'comparacion_page.dart';
-import 'configuracion_page.dart';
-import 'dashboard_page.dart';
-import 'productos_page.dart';
-import 'proveedores_page.dart';
-import 'remitos_page.dart';
-import 'stock_page.dart';
+import '../services/cliente_service.dart';
+import '../services/compra_service.dart';
+import '../services/producto_service.dart';
+import '../services/remito_service.dart';
 
 class InicioPage extends StatefulWidget {
   const InicioPage({super.key});
@@ -21,356 +18,336 @@ class InicioPage extends StatefulWidget {
 }
 
 class _InicioPageState extends State<InicioPage> {
-  final CsvService csvService = CsvService();
+  final _productoService = ProductoService();
+  final _clienteService = ClienteService();
+  final _remitoService = RemitoService();
+  final _compraService = CompraService();
 
-  bool cargando = false;
-  int railIndex = 0;
+  int _totalProductos = 0;
+  int _stockTotal = 0;
+  int _sinStock = 0;
+  int _totalClientes = 0;
+  int _totalRemitos = 0;
+  double _ventasMes = 0;
+  double _comprasMes = 0;
+  double _valorStock = 0;
+  List<Producto> _ultimosProductos = [];
+  bool _cargando = true;
 
-  Future<void> analizar() async {
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    setState(() => _cargando = true);
+    final productos = await _productoService.obtenerTodos();
+    final clientes = await _clienteService.obtenerTodos();
+    final remitos = await _remitoService.cantidad();
+    final ahora = DateTime.now();
+    final inicioMes = DateTime(ahora.year, ahora.month, 1);
+    final ventasMes =
+        await _remitoService.totalVentasPorPeriodo(inicioMes, ahora);
+    final comprasMes =
+        await _compraService.totalComprasPorPeriodo(inicioMes, ahora);
+
+    if (!mounted) return;
+    final sorted = [...productos]
+      ..sort((a, b) => (b.id ?? 0).compareTo(a.id ?? 0));
     setState(() {
-      cargando = true;
+      _totalProductos = productos.length;
+      _stockTotal = productos.fold(0, (s, p) => s + p.stock);
+      _sinStock = productos.where((p) => p.stock == 0).length;
+      _valorStock = productos.fold(0.0, (s, p) => s + p.precio * p.stock);
+      _totalClientes = clientes.length;
+      _totalRemitos = remitos;
+      _ventasMes = ventasMes;
+      _comprasMes = comprasMes;
+      _ultimosProductos = sorted.take(5).toList();
+      _cargando = false;
     });
+  }
 
-    try {
-      final cantidad = await csvService.analizarArchivo();
-
-      if (!mounted) return;
-
-      setState(() {
-        cargando = false;
-      });
-
-      if (cantidad == 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("No se seleccionó ningún archivo."),
-          ),
-        );
-        return;
+  static String _fmt(num v) {
+    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
+    if (v >= 1000) {
+      final s = v.toStringAsFixed(0);
+      final buf = StringBuffer();
+      for (int i = 0; i < s.length; i++) {
+        if (i > 0 && (s.length - i) % 3 == 0) buf.write('.');
+        buf.write(s[i]);
       }
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const ComparacionPage(),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        cargando = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
+      return buf.toString();
     }
-  }
-
-  void _abrirPagina(Widget page) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => page),
-    );
-  }
-
-  List<_ModuleConfig> _buildModules(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return [
-      _ModuleConfig(
-        icon: Icons.inventory_2_rounded,
-        title: "Productos",
-        color: AppVisuals.primaryAccent(colorScheme),
-        onTap: () => _abrirPagina(const ProductosPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.local_shipping_rounded,
-        title: "Proveedores",
-        color: AppVisuals.info(colorScheme),
-        onTap: () => _abrirPagina(const ProveedoresPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.groups_rounded,
-        title: "Clientes",
-        color: AppVisuals.secondaryAccent(colorScheme),
-        onTap: () => _abrirPagina(const ClientesPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.description_rounded,
-        title: "Remitos",
-        color: AppVisuals.warning(colorScheme),
-        onTap: () => _abrirPagina(const RemitosPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.warehouse_rounded,
-        title: "Stock",
-        color: AppVisuals.success(colorScheme),
-        onTap: () => _abrirPagina(const StockPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.query_stats_rounded,
-        title: "Dashboard",
-        color: AppVisuals.tertiaryAccent(colorScheme),
-        onTap: () => _abrirPagina(const DashboardPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.cloud_upload_rounded,
-        title: "Respaldo",
-        color: AppVisuals.neutral(colorScheme),
-        onTap: () => _abrirPagina(const BackupPage()),
-      ),
-      _ModuleConfig(
-        icon: Icons.tune_rounded,
-        title: "Configuración",
-        color: AppVisuals.primaryAccent(colorScheme),
-        onTap: () => _abrirPagina(const ConfiguracionPage()),
-      ),
-    ];
-  }
-
-  void _onRailSelected(int index) {
-    setState(() => railIndex = index);
-    switch (index) {
-      case 1:
-        _abrirPagina(const ProductosPage());
-        break;
-      case 2:
-        _abrirPagina(const ClientesPage());
-        break;
-      case 3:
-        _abrirPagina(const RemitosPage());
-        break;
-      case 4:
-        _abrirPagina(const DashboardPage());
-        break;
-      case 5:
-        _abrirPagina(const ConfiguracionPage());
-        break;
-      default:
-        break;
-    }
-  }
-
-  Widget _buildHomeContent({required int crossAxisCount}) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final modules = _buildModules(context);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
-          child: Column(
-            children: [
-              Card(
-                elevation: 6,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.storefront_rounded,
-                        color: colorScheme.primary,
-                        size: 64,
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        BrandingService.instance.nombre,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        BrandingService.instance.slogan,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton.icon(
-                          onPressed: cargando ? null : analizar,
-                          icon: const Icon(Icons.analytics),
-                          label: const Text("ANALIZAR LISTA"),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (cargando) const CircularProgressIndicator(),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              Text(
-                "MÓDULOS",
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: modules.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.1,
-                ),
-                itemBuilder: (context, index) {
-                  final module = modules[index];
-                  return _ModuleCard(
-                    icon: module.icon,
-                    title: module.title,
-                    color: module.color,
-                    onTap: module.onTap,
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return v.toStringAsFixed(0);
   }
 
   @override
   Widget build(BuildContext context) {
+    final branding = BrandingService.instance;
+    final userName =
+        AuthService.instance.currentUser?.nombre ?? 'Usuario';
+    final cs = Theme.of(context).colorScheme;
+    final logoPath = branding.logoPath;
+    final ahora = DateTime.now();
+    const meses = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    final fecha =
+        '${ahora.day} de ${meses[ahora.month - 1]} de ${ahora.year}';
+
     return Scaffold(
-      appBar: AppBar(
-      title: Text(BrandingService.instance.nombre),
-        centerTitle: true,
-        actions: [
-          IconButton(
-          icon: const Icon(Icons.query_stats_rounded),
-            tooltip: "Dashboard",
-            onPressed: () {
-              _abrirPagina(const DashboardPage());
-            },
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth >= 600) {
-            final crossAxisCount = constraints.maxWidth >= 1000 ? 3 : 2;
-            return Row(
-              children: [
-                NavigationRail(
-                  selectedIndex: railIndex,
-                  onDestinationSelected: _onRailSelected,
-                  labelType: NavigationRailLabelType.all,
-                  destinations: const [
-                    NavigationRailDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home_rounded),
-                      label: Text('Inicio'),
+      backgroundColor: cs.surface,
+      body: _cargando
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _cargar,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Encabezado de bienvenida ─────────────────────────────
+                    Row(
+                      children: [
+                        if (logoPath.isNotEmpty)
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundImage: FileImage(File(logoPath)),
+                          )
+                        else
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: cs.primaryContainer,
+                            child:
+                                Icon(Icons.store_rounded, color: cs.primary),
+                          ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Bienvenido, $userName',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                              Text(
+                                fecha,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.refresh_rounded),
+                          onPressed: _cargar,
+                          tooltip: 'Actualizar',
+                        ),
+                      ],
                     ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.inventory_2_outlined),
-                      selectedIcon: Icon(Icons.inventory_2_rounded),
-                      label: Text('Productos'),
+                    const SizedBox(height: 20),
+                    // ── KPI Cards ────────────────────────────────────────────
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final cols = constraints.maxWidth < 500 ? 2 : 4;
+                        return GridView.count(
+                          crossAxisCount: cols,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: cols == 2 ? 1.8 : 2.2,
+                          children: [
+                            _KpiCard(
+                              title: 'Productos',
+                              value: _fmt(_totalProductos),
+                              icon: Icons.inventory_2_rounded,
+                              color: const Color(0xFF8B5CF6),
+                            ),
+                            _KpiCard(
+                              title: 'Stock total',
+                              value: _fmt(_stockTotal),
+                              icon: Icons.layers_rounded,
+                              color: const Color(0xFF22C55E),
+                            ),
+                            _KpiCard(
+                              title: 'Valor stock',
+                              value: '\$${_fmt(_valorStock)}',
+                              icon: Icons.attach_money_rounded,
+                              color: const Color(0xFF3B82F6),
+                            ),
+                            _KpiCard(
+                              title: 'Sin stock',
+                              value: _fmt(_sinStock),
+                              icon: Icons.warning_amber_rounded,
+                              color: const Color(0xFFEF4444),
+                            ),
+                            _KpiCard(
+                              title: 'Clientes',
+                              value: _fmt(_totalClientes),
+                              icon: Icons.groups_rounded,
+                              color: const Color(0xFF0891B2),
+                            ),
+                            _KpiCard(
+                              title: 'Remitos totales',
+                              value: _fmt(_totalRemitos),
+                              icon: Icons.description_rounded,
+                              color: const Color(0xFFF59E0B),
+                            ),
+                            _KpiCard(
+                              title: 'Ventas del mes',
+                              value: '\$${_fmt(_ventasMes)}',
+                              icon: Icons.payments_rounded,
+                              color: const Color(0xFF16A34A),
+                            ),
+                            _KpiCard(
+                              title: 'Compras del mes',
+                              value: '\$${_fmt(_comprasMes)}',
+                              icon: Icons.shopping_cart_rounded,
+                              color: const Color(0xFF7C3AED),
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.groups_outlined),
-                      selectedIcon: Icon(Icons.groups_rounded),
-                      label: Text('Clientes'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.description_outlined),
-                      selectedIcon: Icon(Icons.description_rounded),
-                      label: Text('Remitos'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.query_stats_outlined),
-                      selectedIcon: Icon(Icons.query_stats_rounded),
-                      label: Text('Dashboard'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.tune_outlined),
-                      selectedIcon: Icon(Icons.tune_rounded),
-                      label: Text('Config'),
+                    const SizedBox(height: 24),
+                    // ── Últimos productos ────────────────────────────────────
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Últimos productos cargados',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            if (_ultimosProductos.isEmpty)
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Text(
+                                    'No hay productos registrados',
+                                    style:
+                                        TextStyle(color: cs.onSurfaceVariant),
+                                  ),
+                                ),
+                              )
+                            else
+                              ...(_ultimosProductos.map(
+                                (p) => ListTile(
+                                  dense: true,
+                                  leading: CircleAvatar(
+                                    backgroundColor: cs.primaryContainer,
+                                    child: Text(
+                                      p.codigo.isNotEmpty
+                                          ? p.codigo[0].toUpperCase()
+                                          : '?',
+                                      style: TextStyle(
+                                        color: cs.primary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  title: Text(p.descripcion),
+                                  subtitle: Text('${p.codigo} · ${p.marca}'),
+                                  trailing: Text(
+                                    '\$${_fmt(p.precio)}',
+                                    style: TextStyle(
+                                      color: cs.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              )),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const VerticalDivider(width: 1),
-                Expanded(child: _buildHomeContent(crossAxisCount: crossAxisCount)),
-              ],
-            );
-          }
-
-          return _buildHomeContent(crossAxisCount: 2);
-        },
-      ),
+              ),
+            ),
     );
   }
 }
 
-class _ModuleConfig {
-  final IconData icon;
+class _KpiCard extends StatelessWidget {
   final String title;
-  final VoidCallback onTap;
+  final String value;
+  final IconData icon;
   final Color color;
 
-  const _ModuleConfig({
-    required this.icon,
+  const _KpiCard({
     required this.title,
-    required this.onTap,
-    required this.color,
-  });
-}
-
-class _ModuleCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-  final Color color;
-
-  const _ModuleCard({
+    required this.value,
     required this.icon,
-    required this.title,
-    required this.onTap,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
-      elevation: 2,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: color.withValues(alpha: 0.12),
-                child: Icon(icon, size: 28, color: color),
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            CircleAvatar(
+              radius: 17,
+              backgroundColor: color.withValues(alpha: 0.15),
+              child: Icon(icon, color: color, size: 18),
+            ),
+          ],
         ),
       ),
     );

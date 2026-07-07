@@ -2,8 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'pages/inicio_page.dart';
+import 'pages/login_page.dart';
 import 'services/branding_service.dart';
+import 'services/permisos_service.dart';
 import 'theme/theme_provider.dart';
 
 void main() async {
@@ -11,11 +12,18 @@ void main() async {
   initializeThemeProvider();
   await BrandingService.instance.cargar();
 
-  if (!kIsWeb) {
+  const desktopPlatforms = {
+    TargetPlatform.windows,
+    TargetPlatform.linux,
+    TargetPlatform.macOS,
+  };
+
+  if (!kIsWeb && desktopPlatforms.contains(defaultTargetPlatform)) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
 
+  await PermisosService.instance.cargar();
   runApp(const ElTataApp());
 }
 
@@ -53,7 +61,7 @@ class _ElTataAppState extends State<ElTataApp> {
       theme: themeProvider.lightTheme,
       darkTheme: themeProvider.darkTheme,
       themeMode: themeProvider.mode,
-      home: const InicioPage(),
+      home: const LoginPage(),
     );
   }
 }

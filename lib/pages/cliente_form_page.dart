@@ -17,10 +17,19 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   late TextEditingController nombreController;
+  late TextEditingController apellidoController;
   late TextEditingController telefonoController;
+  late TextEditingController whatsappController;
+  late TextEditingController emailController;
   late TextEditingController direccionController;
+  late TextEditingController localidadController;
+  late TextEditingController provinciaController;
+  late TextEditingController cuitController;
+  late TextEditingController condicionIvaController;
   late TextEditingController observacionesController;
   late TextEditingController descuentoController;
+  late TextEditingController saldoController;
+  late TextEditingController limiteCuentaController;
 
   bool guardando = false;
 
@@ -30,26 +39,56 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
   void initState() {
     super.initState();
     nombreController = TextEditingController(text: widget.cliente?.nombre ?? '');
+    apellidoController =
+        TextEditingController(text: widget.cliente?.apellido ?? '');
     telefonoController =
         TextEditingController(text: widget.cliente?.telefono ?? '');
+    whatsappController =
+        TextEditingController(text: widget.cliente?.whatsapp ?? '');
+    emailController = TextEditingController(text: widget.cliente?.email ?? '');
     direccionController =
         TextEditingController(text: widget.cliente?.direccion ?? '');
+    localidadController =
+        TextEditingController(text: widget.cliente?.localidad ?? '');
+    provinciaController =
+        TextEditingController(text: widget.cliente?.provincia ?? '');
+    cuitController = TextEditingController(text: widget.cliente?.cuit ?? '');
+    condicionIvaController =
+        TextEditingController(text: widget.cliente?.condicionIva ?? '');
     observacionesController =
         TextEditingController(text: widget.cliente?.observaciones ?? '');
     descuentoController = TextEditingController(
       text: (widget.cliente?.descuento ?? 0).toStringAsFixed(1),
+    );
+    saldoController = TextEditingController(
+      text: (widget.cliente?.saldo ?? 0).toStringAsFixed(2),
+    );
+    limiteCuentaController = TextEditingController(
+      text: (widget.cliente?.limiteCuenta ?? 0).toStringAsFixed(2),
     );
   }
 
   @override
   void dispose() {
     nombreController.dispose();
+    apellidoController.dispose();
     telefonoController.dispose();
+    whatsappController.dispose();
+    emailController.dispose();
     direccionController.dispose();
+    localidadController.dispose();
+    provinciaController.dispose();
+    cuitController.dispose();
+    condicionIvaController.dispose();
     observacionesController.dispose();
     descuentoController.dispose();
+    saldoController.dispose();
+    limiteCuentaController.dispose();
     super.dispose();
   }
+
+  double _parseDbl(String text) =>
+      double.tryParse(text.replaceAll(',', '.')) ?? 0;
 
   Future<void> guardar() async {
     if (!formKey.currentState!.validate()) return;
@@ -57,17 +96,24 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
     setState(() => guardando = true);
 
     final descuento =
-        (double.tryParse(descuentoController.text.replaceAll(',', '.')) ?? 0)
-            .clamp(0.0, 100.0)
-            .toDouble();
+        _parseDbl(descuentoController.text).clamp(0.0, 100.0).toDouble();
 
     final cliente = Cliente(
       id: widget.cliente?.id,
       nombre: nombreController.text.trim(),
+      apellido: apellidoController.text.trim(),
       telefono: telefonoController.text.trim(),
+      whatsapp: whatsappController.text.trim(),
+      email: emailController.text.trim(),
       direccion: direccionController.text.trim(),
+      localidad: localidadController.text.trim(),
+      provincia: provinciaController.text.trim(),
+      cuit: cuitController.text.trim(),
+      condicionIva: condicionIvaController.text.trim(),
       observaciones: observacionesController.text.trim(),
       descuento: descuento,
+      saldo: _parseDbl(saldoController.text),
+      limiteCuenta: _parseDbl(limiteCuentaController.text),
     );
 
     if (esEdicion) {
@@ -78,6 +124,28 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
 
     if (!mounted) return;
     Navigator.pop(context);
+  }
+
+  Widget _campo(
+    String label,
+    TextEditingController controller, {
+    IconData? icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: icon != null ? Icon(icon) : null,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -103,25 +171,22 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
                     v == null || v.trim().isEmpty ? "Ingresá el nombre" : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: telefonoController,
-                decoration: const InputDecoration(
-                  labelText: "Teléfono",
-                  prefixIcon: Icon(Icons.phone),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: direccionController,
-                decoration: const InputDecoration(
-                  labelText: "Dirección",
-                  prefixIcon: Icon(Icons.location_on),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
+              _campo("Apellido", apellidoController, icon: Icons.badge_outlined),
+              _campo("Teléfono", telefonoController,
+                  icon: Icons.phone, keyboardType: TextInputType.phone),
+              _campo("WhatsApp", whatsappController,
+                  icon: Icons.chat, keyboardType: TextInputType.phone),
+              _campo("Email", emailController,
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress),
+              _campo("Dirección", direccionController,
+                  icon: Icons.location_on),
+              _campo("Localidad", localidadController,
+                  icon: Icons.location_city_outlined),
+              _campo("Provincia", provinciaController, icon: Icons.map_outlined),
+              _campo("CUIT", cuitController, icon: Icons.badge),
+              _campo("Condición IVA", condicionIvaController,
+                  icon: Icons.receipt_long_outlined),
               TextFormField(
                 controller: descuentoController,
                 decoration: const InputDecoration(
@@ -133,13 +198,9 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
                     const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
                   final texto = (value ?? '').trim();
-                  if (texto.isEmpty) {
-                    return null;
-                  }
+                  if (texto.isEmpty) return null;
                   final descuento = double.tryParse(texto.replaceAll(',', '.'));
-                  if (descuento == null) {
-                    return 'Ingresá un número válido';
-                  }
+                  if (descuento == null) return 'Ingresá un número válido';
                   if (descuento < 0 || descuento > 100) {
                     return 'El descuento debe estar entre 0 y 100';
                   }
@@ -147,15 +208,16 @@ class _ClienteFormPageState extends State<ClienteFormPage> {
                 },
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: observacionesController,
-                decoration: const InputDecoration(
-                  labelText: "Observaciones",
-                  prefixIcon: Icon(Icons.notes),
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
+              _campo("Saldo de cuenta corriente", saldoController,
+                  icon: Icons.account_balance_wallet_outlined,
+                  keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true, signed: true)),
+              _campo("Límite de cuenta corriente", limiteCuentaController,
+                  icon: Icons.credit_card,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true)),
+              _campo("Observaciones", observacionesController,
+                  icon: Icons.notes, maxLines: 3),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,

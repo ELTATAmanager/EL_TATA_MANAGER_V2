@@ -25,9 +25,11 @@ class ThemeProvider extends ChangeNotifier {
     final fuenteStr = prefs.getString('themeFuente') ?? 'Poppins';
     final modeStr = prefs.getString('themeMode') ?? 'system';
 
-    _color = AppTheme.coloresDisponibles[
-      colorIndex.clamp(0, AppTheme.coloresDisponibles.length - 1),
-    ];
+    final safeColorIndex = colorIndex.clamp(
+      0,
+      AppTheme.coloresDisponibles.length - 1,
+    ).toInt();
+    _color = AppTheme.coloresDisponibles[safeColorIndex];
     _fuente = AppTheme.fuentesDisponibles.contains(fuenteStr)
         ? fuenteStr
         : 'Poppins';

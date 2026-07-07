@@ -4,11 +4,14 @@ class Comparacion {
   String codigo;
   String descripcion;
 
+  /// costoViejo y costoNuevo se almacenan en las columnas precioViejo/precioNuevo
+  /// de la BD para mantener compatibilidad con versiones anteriores.
   double precioViejo;
   double precioNuevo;
 
   String estado;
   String marca;
+  String proveedor;
 
   Comparacion({
     this.id,
@@ -18,6 +21,7 @@ class Comparacion {
     required this.precioNuevo,
     required this.estado,
     this.marca = '',
+    this.proveedor = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +33,7 @@ class Comparacion {
       'precioNuevo': precioNuevo,
       'estado': estado,
       'marca': marca,
+      'proveedor': proveedor,
     };
   }
 
@@ -41,6 +46,7 @@ class Comparacion {
       precioNuevo: (map['precioNuevo'] ?? 0).toDouble(),
       estado: map['estado'] ?? '',
       marca: map['marca'] ?? '',
+      proveedor: map['proveedor'] ?? '',
     );
   }
 

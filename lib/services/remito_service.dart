@@ -4,6 +4,7 @@ import '../database/database_helper.dart';
 import '../models/movimiento_stock.dart';
 import '../models/remito.dart';
 import '../models/remito_detalle.dart';
+import 'auth_service.dart';
 
 class RemitoService {
   final DatabaseHelper dbHelper = DatabaseHelper.instance;
@@ -47,6 +48,19 @@ class RemitoService {
           'subtotal': item.subtotal,
         });
 
+        final productoRows = await txn.query(
+          'productos',
+          columns: ['stock'],
+          where: 'id = ?',
+          whereArgs: [item.productoId],
+          limit: 1,
+        );
+        final stockAnterior =
+            (productoRows.isNotEmpty ? productoRows.first['stock'] as num? : 0)
+                    ?.toInt() ??
+                0;
+        final stockNuevo = stockAnterior - item.cantidad;
+
         await txn.rawUpdate(
           'UPDATE productos SET stock = stock - ? WHERE id = ?',
           [item.cantidad, item.productoId],
@@ -59,6 +73,9 @@ class RemitoService {
           fecha: DateTime.now(),
           remitoId: remitoId.toString(),
           motivo: 'Salida por remito ${remito.numero}',
+          usuario: AuthService.instance.currentUser?.usuario ?? 'sistema',
+          stockAnterior: stockAnterior,
+          stockNuevo: stockNuevo,
         );
 
         await txn.insert('movimientos_stock', movimiento.toMap()..remove('id'));
@@ -160,6 +177,18 @@ class RemitoService {
       for (final item in items) {
         final productoId = item['productoId'] as int;
         final cantidad = item['cantidad'] as int? ?? 0;
+        final productoRows = await txn.query(
+          'productos',
+          columns: ['stock'],
+          where: 'id = ?',
+          whereArgs: [productoId],
+          limit: 1,
+        );
+        final stockAnterior =
+            (productoRows.isNotEmpty ? productoRows.first['stock'] as num? : 0)
+                    ?.toInt() ??
+                0;
+        final stockNuevo = stockAnterior + cantidad;
 
         await txn.rawUpdate(
           'UPDATE productos SET stock = stock + ? WHERE id = ?',
@@ -173,6 +202,9 @@ class RemitoService {
           fecha: DateTime.now(),
           remitoId: id.toString(),
           motivo: 'Reversión de remito ${remito['numero']}',
+          usuario: AuthService.instance.currentUser?.usuario ?? 'sistema',
+          stockAnterior: stockAnterior,
+          stockNuevo: stockNuevo,
         );
 
         await txn.insert('movimientos_stock', movimiento.toMap()..remove('id'));
@@ -199,6 +231,27 @@ class RemitoService {
       "SELECT SUM(total) total FROM remitos WHERE estado != 'anulado'",
     );
     return (r.first['total'] as num?)?.toDouble() ?? 0;
+  }
+
+  Future<double> totalVentasPorPeriodo(DateTime desde, DateTime hasta) async {
+    final db = await dbHelper.database;
+    final r = await db.rawQuery(
+      "SELECT SUM(total) total FROM remitos WHERE estado != 'anulado' AND fecha >= ? AND fecha <= ?",
+      [desde.toIso8601String(), hasta.toIso8601String()],
+    );
+    return (r.first['total'] as num?)?.toDouble() ?? 0;
+  }
+
+  Future<List<Map<String, dynamic>>> ventasPorMes({int meses = 6}) async {
+    final db = await dbHelper.database;
+    return db.rawQuery('''
+      SELECT strftime('%Y-%m', fecha) AS mes, SUM(total) AS total
+      FROM remitos
+      WHERE estado != 'anulado'
+      AND fecha >= date('now', '-$meses months')
+      GROUP BY strftime('%Y-%m', fecha)
+      ORDER BY mes ASC
+    ''');
   }
 
   Future<List<Map<String, dynamic>>> topProductos({int limite = 5}) async {
