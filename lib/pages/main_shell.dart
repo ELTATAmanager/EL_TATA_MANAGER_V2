@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/branding_service.dart';
 import '../services/permisos_service.dart';
+import '../theme/layout_constants.dart';
 import 'auditoria_page.dart';
 import 'backup_page.dart';
 import 'busqueda_global_page.dart';
@@ -241,7 +242,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 800;
+        final desktop = constraints.maxWidth >= kDesktopBreakpoint;
         if (desktop) {
           return _buildDesktopLayout();
         }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/branding_service.dart';
 import '../services/csv_service.dart';
 import '../theme/app_visuals.dart';
+import '../theme/layout_constants.dart';
 import 'backup_page.dart';
 import 'clientes_page.dart';
 import 'comparacion_page.dart';
@@ -119,7 +120,7 @@ class _InicioPageState extends State<InicioPage> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 800;
+        final desktop = constraints.maxWidth >= kDesktopBreakpoint;
 
         return Scaffold(
           backgroundColor: const Color(0xFF07090F),
