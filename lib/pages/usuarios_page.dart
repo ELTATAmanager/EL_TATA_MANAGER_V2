@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/usuario.dart';
 import '../services/usuario_service.dart';
 import '../theme/app_visuals.dart';
+import '../utils/text_utils.dart';
 import 'usuario_form_page.dart';
 
 class UsuariosPage extends StatefulWidget {
@@ -124,7 +125,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
                               leading: CircleAvatar(
                                 backgroundColor: colorRol.withValues(alpha: .15),
                                 child: Text(
-                                  usuario.nombre.substring(0, 1).toUpperCase(),
+                                  safeInitial(usuario.nombre, fallback: '?'),
                                   style: TextStyle(
                                     color: colorRol,
                                     fontWeight: FontWeight.bold,

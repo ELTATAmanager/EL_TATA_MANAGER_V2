@@ -7,6 +7,7 @@ import '../services/auto_backup_service.dart';
 import '../services/branding_service.dart';
 import '../services/permisos_service.dart';
 import '../theme/layout_constants.dart';
+import '../utils/text_utils.dart';
 import 'auditoria_page.dart';
 import 'backup_page.dart';
 import 'busqueda_global_page.dart';
@@ -346,9 +347,7 @@ class _MainShellState extends State<MainShell> {
               radius: 16,
               backgroundColor: cs.primaryContainer,
               child: Text(
-                (AuthService.instance.currentUser?.nombre ?? 'A')
-                    .substring(0, 1)
-                    .toUpperCase(),
+                safeInitial(AuthService.instance.currentUser?.nombre),
                 style: TextStyle(
                   color: cs.onPrimaryContainer,
                   fontWeight: FontWeight.bold,
@@ -554,9 +553,7 @@ class _SidebarContent extends StatelessWidget {
                 radius: 16,
                 backgroundColor: const Color(0xFF1E3A5F),
                 child: Text(
-                  (AuthService.instance.currentUser?.nombre ?? 'A')
-                      .substring(0, 1)
-                      .toUpperCase(),
+                  safeInitial(AuthService.instance.currentUser?.nombre),
                   style: const TextStyle(
                     color: Color(0xFF93C5FD),
                     fontWeight: FontWeight.bold,
@@ -617,7 +614,7 @@ class _TopBar extends StatelessWidget {
     final branding = BrandingService.instance;
     final logoPath = branding.logoPath;
     final userName = AuthService.instance.currentUser?.nombre ?? 'Usuario';
-    final userInitial = userName.substring(0, 1).toUpperCase();
+    final userInitial = safeInitial(userName, fallback: 'U');
 
     return Container(
       height: 56,
