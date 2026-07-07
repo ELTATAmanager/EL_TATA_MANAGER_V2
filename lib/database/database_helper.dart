@@ -22,7 +22,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 12,
+      version: 13,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -138,6 +138,8 @@ CREATE TABLE comparacion(
     await _crearTablaHistorialPrecios(db);
     await _crearTablaPermisos(db);
     await _crearTablaVentas(db);
+    await _crearTablaCategorias(db);
+    await _crearTablaVentasItems(db);
     await _crearIndices(db);
   }
 
@@ -448,6 +450,33 @@ CREATE TABLE IF NOT EXISTS ventas(
 ''');
   }
 
+  Future<void> _crearTablaCategorias(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS categorias(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL UNIQUE,
+  descripcion TEXT DEFAULT '',
+  activa INTEGER DEFAULT 1
+)
+''');
+  }
+
+  Future<void> _crearTablaVentasItems(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS ventas_items(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ventaId INTEGER NOT NULL,
+  productoId INTEGER NOT NULL,
+  productoDescripcion TEXT,
+  cantidad INTEGER DEFAULT 0,
+  precio REAL DEFAULT 0,
+  subtotal REAL DEFAULT 0,
+  FOREIGN KEY(ventaId) REFERENCES ventas(id),
+  FOREIGN KEY(productoId) REFERENCES productos(id)
+)
+''');
+  }
+
   Future<void> _crearIndices(Database db) async {
     const indices = [
       'CREATE INDEX IF NOT EXISTS idx_productos_codigo ON productos(codigo)',
@@ -466,6 +495,9 @@ CREATE TABLE IF NOT EXISTS ventas(
       'CREATE INDEX IF NOT EXISTS idx_audit_log_fecha ON audit_log(fecha)',
       'CREATE INDEX IF NOT EXISTS idx_audit_log_usuario ON audit_log(usuario)',
       'CREATE INDEX IF NOT EXISTS idx_historial_precios_productoId ON historial_precios(productoId)',
+      'CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(fecha)',
+      'CREATE INDEX IF NOT EXISTS idx_ventas_clienteId ON ventas(clienteId)',
+      'CREATE INDEX IF NOT EXISTS idx_ventas_tipo ON ventas(tipo)',
     ];
 
     for (final sql in indices) {
@@ -582,6 +614,11 @@ CREATE TABLE IF NOT EXISTS ventas(
       await _agregarColumnas(db, 'comparacion', {
         'proveedor': "TEXT DEFAULT ''",
       });
+    }
+
+    if (oldVersion < 13) {
+      await _crearTablaCategorias(db);
+      await _crearTablaVentasItems(db);
     }
   }
 

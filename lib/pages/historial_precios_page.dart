@@ -51,7 +51,7 @@ class _HistorialPreciosPageState extends State<HistorialPreciosPage> {
           ? const Center(child: CircularProgressIndicator())
           : historial.isEmpty
               ? const Center(
-                  child: Text('Este producto no tiene cambios de costo registrados.'),
+                  child: Text('Este producto no tiene cambios registrados.'),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(12),
@@ -62,6 +62,14 @@ class _HistorialPreciosPageState extends State<HistorialPreciosPage> {
                         (item['costoAnterior'] as num?)?.toDouble() ?? 0;
                     final costoNuevo =
                         (item['costoNuevo'] as num?)?.toDouble() ?? 0;
+                    final precioAnterior =
+                        (item['precioAnterior'] as num?)?.toDouble() ?? 0;
+                    final precioNuevo =
+                        (item['precioNuevo'] as num?)?.toDouble() ?? 0;
+                    final porcentaje =
+                        (item['porcentaje'] as num?)?.toDouble() ?? 0;
+                    final lista =
+                        (item['listaModificada'] ?? '').toString();
                     final subio = costoNuevo >= costoAnterior;
 
                     return Card(
@@ -78,12 +86,19 @@ class _HistorialPreciosPageState extends State<HistorialPreciosPage> {
                           ),
                         ),
                         title: Text(
-                          '\$${costoAnterior.toStringAsFixed(2)} → \$${costoNuevo.toStringAsFixed(2)}',
+                          'Costo: \$${costoAnterior.toStringAsFixed(2)} → \$${costoNuevo.toStringAsFixed(2)}',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (precioAnterior > 0 || precioNuevo > 0)
+                              Text(
+                                'Precio: \$${precioAnterior.toStringAsFixed(2)} → \$${precioNuevo.toStringAsFixed(2)}'
+                                '${porcentaje != 0 ? '  (${porcentaje >= 0 ? '+' : ''}${porcentaje.toStringAsFixed(1)}%)' : ''}',
+                              ),
+                            if (lista.isNotEmpty)
+                              Text('Lista: $lista'),
                             Text(_formatearFecha(item['fecha']?.toString())),
                             Text('Usuario: ${item['usuario'] ?? '-'}'),
                             if ((item['motivo'] ?? '').toString().isNotEmpty)

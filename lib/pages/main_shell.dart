@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/auto_backup_service.dart';
 import '../services/branding_service.dart';
 import '../services/permisos_service.dart';
 import '../theme/layout_constants.dart';
 import 'auditoria_page.dart';
 import 'backup_page.dart';
 import 'busqueda_global_page.dart';
+import 'categorias_page.dart';
 import 'centro_importaciones_page.dart';
 import 'clientes_page.dart';
 import 'comparacion_page.dart';
@@ -28,6 +30,7 @@ import 'remitos_page.dart';
 import 'reportes_page.dart';
 import 'stock_page.dart';
 import 'usuarios_page.dart';
+import 'ventas_page.dart';
 import 'venta_rapida_page.dart';
 
 // ── Paleta fija para la barra lateral oscura ──────────────────────────────────
@@ -68,6 +71,13 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    // Start automatic backup timer if configured
+    AutoBackupService.instance.iniciar();
+  }
+
   List<_ShellItem> get _items => [
         _ShellItem(
           icon: Icons.home_rounded,
@@ -91,10 +101,23 @@ class _MainShellState extends State<MainShell> {
           quickAccess: true,
         ),
         _ShellItem(
+          icon: Icons.category_rounded,
+          title: 'Categorías',
+          modulo: 'productos',
+          builder: () => const CategoriasPage(),
+        ),
+        _ShellItem(
           icon: Icons.point_of_sale_rounded,
           title: 'Venta Rápida',
           modulo: 'remitos',
           builder: () => const VentaRapidaPage(),
+          quickAccess: true,
+        ),
+        _ShellItem(
+          icon: Icons.receipt_long_rounded,
+          title: 'Ventas / Facturas',
+          modulo: 'remitos',
+          builder: () => const VentasPage(),
           quickAccess: true,
         ),
         _ShellItem(
