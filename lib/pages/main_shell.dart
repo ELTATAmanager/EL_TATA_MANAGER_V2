@@ -16,6 +16,7 @@ import 'compras_page.dart';
 import 'configuracion_page.dart';
 import 'dashboard_page.dart';
 import 'etiquetas_page.dart';
+import 'inicio_page.dart';
 import 'importacion_page.dart';
 import 'inteligencia_comercial_page.dart';
 import 'listas_precio_page.dart';
@@ -33,8 +34,8 @@ import 'venta_rapida_page.dart';
 const Color _kSidebarBg = Color(0xFF111827);
 const Color _kSidebarBorder = Color(0xFF1F2937);
 const Color _kSidebarHeaderBorder = Color(0xFF374151);
-const Color _kSidebarSelectedBg = Color(0x333B82F6);
-const Color _kSidebarSelectedIcon = Color(0xFF93C5FD);
+const Color _kSidebarSelectedBg = Color(0xFFFF7A00);
+const Color _kSidebarSelectedIcon = Colors.white;
 const Color _kSidebarSelectedText = Colors.white;
 const Color _kSidebarInactiveIcon = Color(0xFF9CA3AF);
 const Color _kSidebarInactiveText = Color(0xFFD1D5DB);
@@ -68,6 +69,13 @@ class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
   List<_ShellItem> get _items => [
+        _ShellItem(
+          icon: Icons.home_rounded,
+          title: 'Inicio',
+          modulo: 'dashboard',
+          builder: () => const InicioPage(),
+          quickAccess: true,
+        ),
         _ShellItem(
           icon: Icons.query_stats_rounded,
           title: 'Dashboard',
